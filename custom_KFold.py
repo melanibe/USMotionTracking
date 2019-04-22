@@ -36,10 +36,12 @@ class MyKFold:
 
     def getIterator(self):
         p = 0
-        while p < len(self.data_dir):
+        print(len(self.listdir))
+        while p < len(self.listdir):
             test_indices = np.arange(
-                p, min(len(self.data_dir), p+self.dir_per_fold), dtype='int')
+                p, min(len(self.listdir), p+self.dir_per_fold), dtype='int')
             print(test_indices)
+            print(p)
             test_dirs = self.listdir[test_indices]
             print(test_dirs)
             train_dirs = np.delete(self.listdir, test_indices)
