@@ -46,6 +46,7 @@ class MyKFold:
 
 
 if __name__=='__main__':
+    np.random.seed(seed=42)
     data_dir = os.getenv('DATA_PATH')
     print(data_dir)
     kf = MyKFold(data_dir, n_splits=5)
@@ -57,8 +58,6 @@ if __name__=='__main__':
         try:
             X_train, X_test, x_train, x_test, y_train, y_test = next(iterator)
             print(len(X_train))
-            print(len(x_train))
-            print(len(y_train))
             est_x = RandomForestRegressor(n_estimators=1000)
             est_x.fit(X_train, x_train.ravel())
             est_y = RandomForestRegressor(n_estimators=1000)

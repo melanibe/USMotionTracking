@@ -11,8 +11,8 @@ from sklearn.model_selection import KFold
 
 def get_local_features(current_dir, width_template=60, bins=20):
     feats_intensity = None
-    labels_x = None
-    labels_y = None
+    labels_x = []
+    labels_y = []
     feats_init = None
     annotation_dir = os.path.join(current_dir, 'Annotation')
     img_dir = os.path.join(current_dir, 'Data')
@@ -43,8 +43,19 @@ def get_local_features(current_dir, width_template=60, bins=20):
         print('id length {}'.format(n_obs))
         for i in df.id.values[1:n_obs]:
             img = np.asarray(Image.open(list_imgs[int(i)-1]))
+            # true location
             c1, c2 = df.loc[df['id'] == i, ['x', 'y']].values[0, :]
-            xax, yax = find_template_pixel(c1, c2,
+            # perturbed center of the template
+            u_x = np.random.rand()*40-20
+            u_y = np.random.rand()*40-20
+            c1_perturbed = c1 - u_x # ~ Unif(-20,20)
+            c2_perturbed = c2 - u_y
+            # labels is the coord wrt to the center of
+            # the pixel so here c1 = c1_perturbed - 2
+            # label_x = -2 i.e. c1 = c1_perturbed + label
+            labels_x = np.append(labels_x, u_x)
+            labels_y = np.append(labels_y, u_y)
+            xax, yax = find_template_pixel(c1_perturbed, c2_perturbed,
                                            width=width_template)
             img_template = img[np.ravel(yax), np.ravel(xax)]
             tmp, _ = np.histogram(img_template, bins=bins, range=(0, 255))
@@ -53,11 +64,7 @@ def get_local_features(current_dir, width_template=60, bins=20):
                     (feats_intensity, tmp.reshape(1, bins)), axis=0)
             else:
                 feats_intensity = np.reshape(tmp, (1, bins))
-        if labels_x is not None:
-            labels_x = np.concatenate(
-                (labels_x, df.x.values[1:n_obs].reshape(-1, 1)), axis=0)
-            labels_y = np.concatenate(
-                (labels_y, df.y.values[1:n_obs].reshape(-1, 1)), axis=0)
+        if feats_init is not None:
             feats_init = np.concatenate(
                 (feats_init,
                     np.tile(current_feats_init, n_obs-1).reshape(-1, bins)),
@@ -66,8 +73,6 @@ def get_local_features(current_dir, width_template=60, bins=20):
             print('x labels {}'.format(labels_x.shape))
             print('feats shape {}'.format(feats_intensity.shape))
         else:
-            labels_x = df.x.values[1:n_obs].reshape(-1, 1)
-            labels_y = df.y.values[1:n_obs].reshape(-1, 1)
             feats_init = np.tile(current_feats_init,
                                  n_obs-1).reshape(-1, bins)
     X_full = np.concatenate((feats_intensity,
