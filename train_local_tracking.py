@@ -48,8 +48,9 @@ def get_local_features(data_dir, width_template=60, bins=20):
             init_template = img_init[np.ravel(yax), np.ravel(xax)]
             current_feats_init, _ = np.histogram(
                 init_template, bins=bins, range=(0, 255))
-            print('id length {}'.format(len(df.id.values)))
-            for i in df.id.values:
+            n_obs = len(df.id.values)
+            print('id length {}'.format(n_obs))
+            for i in df.id.values[1:n_obs]:
                 img = np.asarray(Image.open(list_imgs[int(i)-1]))
                 c1, c2 = df.loc[df['id'] == i, ['x', 'y']].values[0, :]
                 xax, yax = find_template_pixel(c1, c2,
@@ -72,7 +73,7 @@ def get_local_features(data_dir, width_template=60, bins=20):
                #     (y_init, np.repeat(df.y.values[0], len(df.id.values))))
                 feats_init = np.concatenate(
                     (feats_init,
-                        np.tile(current_feats_init, len(df.id.values)).reshape(-1, bins)),
+                        np.tile(current_feats_init, n_obs-1).reshape(-1, bins)),
                     axis=0)
                 print('feats init shape {}'.format(feats_init.shape))
                 # print('x shape {}'.format(x_init.shape))
@@ -84,7 +85,7 @@ def get_local_features(data_dir, width_template=60, bins=20):
                 #x_init = np.repeat(df.x.values[0], len(df.id.values))
                 #y_init = np.repeat(df.y.values[0], len(df.id.values))
                 feats_init = np.tile(current_feats_init,
-                                     len(df.id.values)).reshape(-1, bins)
+                                     n_obs-1).reshape(-1, bins)
     X_full = np.concatenate((feats_intensity,
                              feats_init), axis=1)
     #x_init.reshape((-1, 1)),
@@ -142,7 +143,7 @@ if __name__ == '__main__':
                                         bins=40)
     np.save(os.path.join(data_dir, 'feats_matrices', 'X_full_80_40'), X_full_7)
     kf = KFold(n_splits=5, shuffle=True, random_state=42)
-    meansquare_error = np.zeros((8,5))
+    meansquare_error = np.zeros((8, 5))
     for i in range(7):
         est = RandomForestRegressor(n_estimators=1000)
         X = eval('X_full_{}'.format(i+1))
