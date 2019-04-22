@@ -58,9 +58,9 @@ def get_local_features(data_dir, width_template=60, bins=20):
                 tmp, _ = np.histogram(img_template, bins=bins, range=(0, 255))
                 if feats_intensity is not None:
                     feats_intensity = np.concatenate(
-                        (feats_intensity, tmp.reshape(1, 20)), axis=0)
+                        (feats_intensity, tmp.reshape(1, bins)), axis=0)
                 else:
-                    feats_intensity = np.reshape(tmp, (1, 20))
+                    feats_intensity = np.reshape(tmp, (1, bins))
             if labels_x is not None:
                 labels_x = np.concatenate(
                     (labels_x, df.x.values.reshape(-1, 1)), axis=0)
@@ -72,7 +72,7 @@ def get_local_features(data_dir, width_template=60, bins=20):
                #     (y_init, np.repeat(df.y.values[0], len(df.id.values))))
                 feats_init = np.concatenate(
                     (feats_init,
-                        np.tile(current_feats_init, len(df.id.values)).reshape(-1, 20)),
+                        np.tile(current_feats_init, len(df.id.values)).reshape(-1, bins)),
                     axis=0)
                 print('feats init shape {}'.format(feats_init.shape))
                 # print('x shape {}'.format(x_init.shape))
@@ -84,7 +84,7 @@ def get_local_features(data_dir, width_template=60, bins=20):
                 #x_init = np.repeat(df.x.values[0], len(df.id.values))
                 #y_init = np.repeat(df.y.values[0], len(df.id.values))
                 feats_init = np.tile(current_feats_init,
-                                     len(df.id.values)).reshape(-1, 20)
+                                     len(df.id.values)).reshape(-1, bins)
     X_full = np.concatenate((feats_intensity,
                              feats_init), axis=1)
     #x_init.reshape((-1, 1)),
