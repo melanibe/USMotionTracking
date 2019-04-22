@@ -80,33 +80,48 @@ def get_local_features(current_dir, width_template=60, bins=20):
     return X_full, labels_x, labels_y
 
 
-def get_all_local_features(listdir, width_template=60, bins=20):
-    print(listdir)
-    listdir.sort()
+def get_all_local_features(listdir, data_dir, width_template=60, bins=20, res_df = None):
     X_full = None
     labels_x = None
     labels_y = None
+    res_x = None
+    res_y = None
     for subfolder in listdir:
         try:
-            current_X = np.load(os.path.join(subfolder, 'X_{}_{}.npy'.format(width_template, bins)))
-            current_x = np.load(os.path.join(subfolder, 'x_coords.npy'))
-            current_y = np.load(os.path.join(subfolder, 'y_coords.npy'))
+            current_X = np.load(os.path.join(data_dir, subfolder, 'X_{}_{}.npy'.format(width_template, bins)))
+            current_x = np.load(os.path.join(data_dir, subfolder, 'x_coords.npy'))
+            current_y = np.load(os.path.join(data_dir, subfolder, 'y_coords.npy'))
         except FileNotFoundError:
             current_X, current_x, current_y = get_local_features(
                 subfolder, width_template, bins)
-            np.save(os.path.join(subfolder, 'X_{}_{}.npy'.format(width_template, bins)), current_X)
-            np.save(os.path.join(subfolder, 'x_coords.npy'), current_x)
-            np.save(os.path.join(subfolder, 'y_coords.npy'), current_y)
+            np.save(os.path.join(data_dir, subfolder, 'X_{}_{}.npy'.format(width_template, bins)), current_X)
+            np.save(os.path.join(data_dir, subfolder, 'x_coords.npy'), current_x)
+            np.save(os.path.join(data_dir, subfolder, 'y_coords.npy'), current_y)
         assert(len(current_X)==len(current_x)==len(current_y))
+        if res_df is not None:
+            curr_res_x = res_df.loc[res_df['scan']==subfolder, 'res_x'].values[0]
+            curr_res_y = res_df.loc[res_df['scan']==subfolder, 'res_y'].values[0]
+            curr_res_x = np.repeat(curr_res_x, len(current_X))
+            curr_res_y = np.repeat(curr_res_y, len(current_X))
         if X_full is not None:
             X_full = np.concatenate((X_full, current_X), axis=0)
-            labels_x = np.concatenate((labels_x, current_x), axis=0)
-            labels_y = np.concatenate((labels_y, current_y), axis=0)
+            labels_x = np.append(labels_x, current_x)
+            labels_y = np.append(labels_y, current_y)
+            if res_df is not None:
+                res_x = np.append(res_x, curr_res_x)
+                res_y = np.append(res_y, curr_res_y)
         else:
             X_full = current_X
             labels_x = current_x
             labels_y = current_y
-    return X_full, labels_x, labels_y
+            if res_df is not None:
+                res_x = curr_res_x
+                res_y = curr_res_y
+    try:
+        print(res_x.shape)
+    except AttributeError:
+        pass
+    return X_full, labels_x, labels_y, res_x, res_y
 
 
 if __name__ == '__main__':

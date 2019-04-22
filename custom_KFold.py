@@ -10,13 +10,17 @@ from sklearn.model_selection import KFold
 from train_local_tracking import get_all_local_features
 import sys
 
+
 class MyKFold:
     def __init__(self, data_dir, n_splits=3, width_template=60, bins=20):
+        self.resolution_df = pd.read_csv(os.path.join(data_dir, 'resolution.csv'),
+                                         sep=',\s+',
+                                         decimal='.')
         self.width_template = width_template
         self.n_bins = bins
         self.n_splits = n_splits
         self.data_dir = data_dir
-        self.listdir = np.asarray([os.path.join(data_dir, dI) for dI in os.listdir(self.data_dir) if (
+        self.listdir = np.asarray([dI for dI in os.listdir(self.data_dir) if (
             os.path.isdir(os.path.join(data_dir, dI))
             and not dI == 'feats_matrices')])
         self.listdir.sort()
@@ -33,19 +37,22 @@ class MyKFold:
     def getIterator(self):
         p = 0
         while p < len(self.data_dir):
-            test_indices = np.arange(p, min(len(self.data_dir), p+self.dir_per_fold), dtype='int')
+            test_indices = np.arange(
+                p, min(len(self.data_dir), p+self.dir_per_fold), dtype='int')
             print(test_indices)
             test_dirs = self.listdir[test_indices]
             print(test_dirs)
             train_dirs = np.delete(self.listdir, test_indices)
             print(train_dirs)
             p += self.dir_per_fold
-            X_train, x_train, y_train = get_all_local_features(train_dirs, self.width_template, self.n_bins)
-            X_test, x_test, y_test = get_all_local_features(test_dirs, self.width_template, self.n_bins)
-            yield X_train, X_test, x_train, x_test, y_train, y_test
+            X_train, x_train, y_train, _, _ = get_all_local_features(
+                train_dirs, self.data_dir, self.width_template, self.n_bins)
+            X_test, x_test, y_test, res_test_x, res_test_y = get_all_local_features(
+                test_dirs, self.data_dir, self.width_template, self.n_bins, self.resolution_df)
+            yield X_train, X_test, x_train, x_test, y_train, y_test, res_test_x, res_test_y
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     np.random.seed(seed=42)
     data_dir = os.getenv('DATA_PATH')
     print(data_dir)
@@ -53,10 +60,12 @@ if __name__=='__main__':
     iterator = kf.getIterator()
     mse_x = []
     mse_y = []
+    dist = []
     done = False
     while not done:
         try:
-            X_train, X_test, x_train, x_test, y_train, y_test = next(iterator)
+            X_train, X_test, x_train, x_test, y_train, y_test, res_test_x, res_test_y = next(
+                iterator)
             print(len(X_train))
             est_x = RandomForestRegressor(n_estimators=1000)
             est_x.fit(X_train, x_train.ravel())
@@ -64,11 +73,21 @@ if __name__=='__main__':
             est_y.fit(X_train, y_train.ravel())
             x_pred = est_x.predict(X_test)
             y_pred = est_y.predict(X_test)
+            d = np.mean(
+                np.sqrt(((x_pred - x_test)*res_test_x)**2 +
+                        ((y_pred - y_test)*res_test_y)**2)
+            )
+            print(d)
             print(np.mean((x_pred - x_test)**2))
             print(np.mean((y_pred - y_test)**2))
             mse_x.append(np.mean((x_pred - x_test)**2))
             mse_y.append(np.mean((y_pred - y_test)**2))
+            dist.append(d)
         except StopIteration:
             done = True
-    print('Mean MSE for x across fold {}, std {}'.format(np.mean(mse_x), np.std(mse_x)))
-    print('Mean MSE for y across fold {}, std {}'.format(np.mean(mse_y), np.std(mse_y)))
+    print('Mean MSE for x across fold {}, std {}'.format(
+        np.mean(mse_x), np.std(mse_x)))
+    print('Mean MSE for y across fold {}, std {}'.format(
+        np.mean(mse_y), np.std(mse_y)))
+    print('Mean Euclidian distance across fold {}, std {}'.format(
+        np.mean(dist), np.std(dist)))
