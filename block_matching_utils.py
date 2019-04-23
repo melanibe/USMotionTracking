@@ -10,6 +10,6 @@ def find_search_pixel(c1, c2, width=100):
 
 def find_template_pixel(c1, c2, width=100):
     w = width//2
-    xax = np.arange(int(c1)-w, int(c1)+w+1, step=1)
-    yax = np.arange(int(c2)-w, int(c2)+w+1, step=1)
+    xax = np.arange(int(c1-1)-w, int(c1-1)+w+1, step=1)
+    yax = np.arange(int(c2-1)-w, int(c2-1)+w+1, step=1)
     return np.meshgrid(xax, yax) # all the x,y in the template centered around c1, c2

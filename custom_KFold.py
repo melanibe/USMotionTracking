@@ -34,7 +34,8 @@ class MyKFold:
             self.dir_per_fold = num_dir//self.n_splits
         print('Number folders per fold: {}'.format(self.dir_per_fold))
 
-    def getIterator(self):
+    def getDataIterator(self):
+        """for the estimators that need features"""
         p = 0
         print(len(self.listdir))
         while p < len(self.listdir):
@@ -53,13 +54,28 @@ class MyKFold:
                 test_dirs, self.data_dir, self.width_template, self.n_bins, self.resolution_df)
             yield X_train, X_test, x_train, x_test, y_train, y_test, res_test_x, res_test_y
 
+    def getFolderIterator(self):
+        p = 0
+        print(len(self.listdir))
+        while p < len(self.listdir):
+            test_indices = np.arange(
+                p, min(len(self.listdir), p+self.dir_per_fold), dtype='int')
+            print(test_indices)
+            print(p)
+            test_dirs = self.listdir[test_indices]
+            print(test_dirs)
+            train_dirs = np.delete(self.listdir, test_indices)
+            print(train_dirs)
+            p += self.dir_per_fold
+            yield train_dirs, test_dirs
+
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
     data_dir = os.getenv('DATA_PATH')
     print(data_dir)
     kf = MyKFold(data_dir, n_splits=5)
-    iterator = kf.getIterator()
+    iterator = kf.getDataIterator()
     mse_x = []
     mse_y = []
     dist = []

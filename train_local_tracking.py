@@ -93,7 +93,7 @@ def get_all_local_features(listdir, data_dir, width_template=60, bins=20, res_df
             current_y = np.load(os.path.join(data_dir, subfolder, 'y_coords.npy'))
         except FileNotFoundError:
             current_X, current_x, current_y = get_local_features(
-                subfolder, width_template, bins)
+                os.path.join(data_dir, subfolder), width_template, bins)
             np.save(os.path.join(data_dir, subfolder, 'X_{}_{}.npy'.format(width_template, bins)), current_X)
             np.save(os.path.join(data_dir, subfolder, 'x_coords.npy'), current_x)
             np.save(os.path.join(data_dir, subfolder, 'y_coords.npy'), current_y)
