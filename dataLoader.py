@@ -6,6 +6,14 @@ import pandas as pd
 from block_matching_utils import find_template_pixel
 from tensorflow import keras
 
+def compute_euclidean_distance(res_df, exp_name, preds, labels):
+    curr_res_x = res_df.loc[res_df['scan'] == exp_name, 'res_x'].values[0]
+    curr_res_y = res_df.loc[res_df['scan'] == exp_name, 'res_y'].values[0]
+    return np.mean(
+        np.sqrt(((preds[:, 0] - labels[:, 0])*curr_res_x)**2 +
+                ((preds[:, 1] - labels[:, 1])*curr_res_y)**2)
+    )
+
 class DataLoader(keras.utils.Sequence):
     def __init__(self,
                  data_dir,
@@ -27,6 +35,9 @@ class DataLoader(keras.utils.Sequence):
         self.orig_labels_x = []
         self.orig_labels_y = []
         self.list_imgs_init = []
+        self.resolution_df = pd.read_csv(os.path.join(data_dir, 'resolution.csv'),
+                                         sep=',\s+',
+                                         decimal='.')
         for subfolder in self.list_dir:
             current_dir = os.path.join(self.data_dir, subfolder)
             annotation_dir = os.path.join(current_dir, 'Annotation')
@@ -80,6 +91,7 @@ class DataLoader(keras.utils.Sequence):
                     self.orig_labels_y, df.y.values[1:n_obs])
                 self.shuffle = shuffle
                 self.on_epoch_end()
+    
     def __len__(self):
         'Denotes the number of batches per epoch'
         return int(np.floor(len(self.orig_labels_x) / self.batch_size))
