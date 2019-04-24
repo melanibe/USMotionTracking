@@ -1,14 +1,8 @@
 import os
-from PIL import Image
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-from block_matching_utils import find_template_pixel
-from sklearn.model_selection import KFold
+from sklearn.ensemble import RandomForestRegressor
 from train_local_tracking import get_all_local_features
-import sys
 
 
 class MyKFold:
@@ -57,14 +51,17 @@ class MyKFold:
     def getFolderIterator(self):
         p = 0
         print(len(self.listdir))
+        listdir = np.random.permutation(self.listdir)
+        # shuffle list of scans here
+        # check the template size to use
         while p < len(self.listdir):
             test_indices = np.arange(
                 p, min(len(self.listdir), p+self.dir_per_fold), dtype='int')
             print(test_indices)
             print(p)
-            test_dirs = self.listdir[test_indices]
+            test_dirs = listdir[test_indices]
             print(test_dirs)
-            train_dirs = np.delete(self.listdir, test_indices)
+            train_dirs = np.delete(listdir, test_indices)
             print(train_dirs)
             p += self.dir_per_fold
             yield train_dirs, test_dirs

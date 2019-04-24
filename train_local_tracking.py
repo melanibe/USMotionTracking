@@ -1,10 +1,8 @@
 import os
 from PIL import Image
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor
 from block_matching_utils import find_template_pixel
 from sklearn.model_selection import KFold
 
@@ -48,7 +46,7 @@ def get_local_features(current_dir, width_template=60, bins=20):
             # perturbed center of the template
             u_x = np.random.rand()*40-20
             u_y = np.random.rand()*40-20
-            c1_perturbed = c1 - u_x # ~ Unif(-20,20)
+            c1_perturbed = c1 - u_x  # ~ Unif(-20,20)
             c2_perturbed = c2 - u_y
             # labels is the coord wrt to the center of
             # the pixel so here c1 = c1_perturbed - 2
@@ -80,7 +78,7 @@ def get_local_features(current_dir, width_template=60, bins=20):
     return X_full, labels_x, labels_y
 
 
-def get_all_local_features(listdir, data_dir, width_template=60, bins=20, res_df = None):
+def get_all_local_features(listdir, data_dir, width_template=60, bins=20, res_df=None):
     X_full = None
     labels_x = None
     labels_y = None
@@ -88,19 +86,25 @@ def get_all_local_features(listdir, data_dir, width_template=60, bins=20, res_df
     res_y = None
     for subfolder in listdir:
         try:
-            current_X = np.load(os.path.join(data_dir, subfolder, 'X_{}_{}.npy'.format(width_template, bins)))
-            current_x = np.load(os.path.join(data_dir, subfolder, 'x_coords.npy'))
-            current_y = np.load(os.path.join(data_dir, subfolder, 'y_coords.npy'))
+            current_X = np.load(os.path.join(
+                data_dir, subfolder, 'X_{}_{}.npy'.format(width_template, bins)))
+            current_x = np.load(os.path.join(
+                data_dir, subfolder, 'x_coords.npy'))
+            current_y = np.load(os.path.join(
+                data_dir, subfolder, 'y_coords.npy'))
         except FileNotFoundError:
             current_X, current_x, current_y = get_local_features(
                 os.path.join(data_dir, subfolder), width_template, bins)
-            np.save(os.path.join(data_dir, subfolder, 'X_{}_{}.npy'.format(width_template, bins)), current_X)
+            np.save(os.path.join(data_dir, subfolder,
+                                 'X_{}_{}.npy'.format(width_template, bins)), current_X)
             np.save(os.path.join(data_dir, subfolder, 'x_coords.npy'), current_x)
             np.save(os.path.join(data_dir, subfolder, 'y_coords.npy'), current_y)
-        assert(len(current_X)==len(current_x)==len(current_y))
+        assert(len(current_X) == len(current_x) == len(current_y))
         if res_df is not None:
-            curr_res_x = res_df.loc[res_df['scan']==subfolder, 'res_x'].values[0]
-            curr_res_y = res_df.loc[res_df['scan']==subfolder, 'res_y'].values[0]
+            curr_res_x = res_df.loc[res_df['scan']
+                                    == subfolder, 'res_x'].values[0]
+            curr_res_y = res_df.loc[res_df['scan']
+                                    == subfolder, 'res_y'].values[0]
             curr_res_x = np.repeat(curr_res_x, len(current_X))
             curr_res_y = np.repeat(curr_res_y, len(current_X))
         if X_full is not None:
