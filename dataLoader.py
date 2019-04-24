@@ -6,9 +6,9 @@ from block_matching_utils import find_template_pixel
 from tensorflow import keras
 import tensorflow as tf
 def metrics_distance(labels, preds):
-    return compute_euclidean_distance(None, "", preds, labels)
+    return compute_euclidean_distance_tf(None, "", preds, labels)
 
-def compute_euclidean_distance(res_df, exp_name, preds, labels):
+def compute_euclidean_distance_tf(res_df, exp_name, preds, labels):
     if res_df is not None:
         curr_res_x = res_df.loc[res_df['scan'] == exp_name, 'res_x'].values[0]
         curr_res_y = res_df.loc[res_df['scan'] == exp_name, 'res_y'].values[0]
@@ -17,6 +17,18 @@ def compute_euclidean_distance(res_df, exp_name, preds, labels):
         curr_res_y = 1
     return tf.reduce_mean(
         tf.sqrt(((preds[:, 0] - labels[:, 0])*curr_res_x)**2 +
+                ((preds[:, 1] - labels[:, 1])*curr_res_y)**2)
+    )
+
+def compute_euclidean_distance(res_df, exp_name, preds, labels):
+    if res_df is not None:
+        curr_res_x = res_df.loc[res_df['scan'] == exp_name, 'res_x'].values[0]
+        curr_res_y = res_df.loc[res_df['scan'] == exp_name, 'res_y'].values[0]
+    else:
+        curr_res_x = 1
+        curr_res_y = 1
+    return np.mean(
+        np.sqrt(((preds[:, 0] - labels[:, 0])*curr_res_x)**2 +
                 ((preds[:, 1] - labels[:, 1])*curr_res_y)**2)
     )
 

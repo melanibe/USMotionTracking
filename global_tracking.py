@@ -120,14 +120,12 @@ for traindirs, testdirs in fold_iterator:
         for label_file in list_label_files:
             list_centers = [[]]
             img_current = np.asarray(Image.open(list_imgs[0]))
-            img_prev_good = np.asarray(Image.open(list_imgs[0]))
             df = pd.read_csv(label_file,
                              header=None,
                              names=['id', 'x', 'y'],
                              sep='\s+')
             c1_init, c2_init = df.loc[df['id'] == 1, ['x', 'y']].values[0, :]
             c1, c2 = df.loc[df['id'] == 1, ['x', 'y']].values[0, :]
-            c1_prev, c2_prev = df.loc[df['id'] == 1, ['x', 'y']].values[0, :]
             xax, yax = find_template_pixel(c1_init, c2_init,
                                            width=params_dict['width'])
             template_init = img_init[np.ravel(yax), np.ravel(
@@ -140,19 +138,14 @@ for traindirs, testdirs in fold_iterator:
                 img_prev = img_current
                 # modify like in DataLoader
                 img_current = np.asarray(Image.open(list_imgs[i]))
-                c1, c2, maxNCC, im_prev_good, c1_prev, c2_prev = global_template_search(c1,
-                                                                                        c2,
-                                                                                        c1_prev,
-                                                                                        c2_prev,
-                                                                                        c1_init,
-                                                                                        c2_init,
-                                                                                        img_prev,
-                                                                                        img_current,
-                                                                                        img_init,
-                                                                                        img_prev_good,
-                                                                                        threshold_good=0.95,
-                                                                                        threshold_bad=0.55,
-                                                                                        width=params_dict['width'])
+                c1, c2, maxNCC = global_template_search(c1,
+                                                        c2,
+                                                        c1_init,
+                                                        c2_init,
+                                                        img_prev,
+                                                        img_current,
+                                                        img_init,
+                                                        width=params_dict['width'])
                 xax, yax = find_template_pixel(c1, c2,
                                                width=params_dict['width'])
                 template_current = img_current[np.ravel(
@@ -162,9 +155,6 @@ for traindirs, testdirs in fold_iterator:
                     x=[template_current, template_init, current_centers])
                 old_c1, old_c2 = c1, c2
                 c1, c2 = pred[0, 0], pred[0, 1]
-                # In case the "good image" was updated
-                if np.all(img_current == im_prev_good):
-                    c1_prev, c2_prev = pred[0, 0], pred[0, 1]
                 list_centers = np.append(list_centers, [c1, c2])
                 if i in df.id.values:
                     true = df.loc[df['id'] == i, ['x', 'y']].values[0]
