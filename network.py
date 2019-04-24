@@ -3,7 +3,7 @@ from tensorflow import keras
 from dataLoader import metrics_distance
 
 def create_model(img_size,
-                 h1=32, h2=64, h3=128, h4=0,
+                 h1=32, h2=64, h3=128,
                  embed_size=128, d1=32,
                  drop_out_rate=0.1,
                  use_batch_norm=True):
@@ -81,37 +81,37 @@ def create_model(img_size,
             x = drop2(x)
             x_init = drop2(x_init)
     if not h3 == 0:
-        CNN_3 = keras.layers.Conv2D(
+        CNN_3_1 = keras.layers.Conv2D(
             filters=h3, kernel_size=3, activation=tf.nn.relu)
+        CNN_3_2 = keras.layers.Conv2D(
+            filters=h3, kernel_size=3, activation=tf.nn.relu)
+        CNN_3_3 = keras.layers.Conv2D(
+            filters=h3, kernel_size=5, activation=tf.nn.relu, strides=2)
         pool_3 = keras.layers.MaxPooling2D(pool_size=(2, 2))
-        batch_3 = keras.layers.BatchNormalization()
-        x = CNN_3(x)
-        x = pool_3(x)
-        x_init = CNN_3(x_init)
+        batch_3_1 = keras.layers.BatchNormalization()
+        batch_3_2 = keras.layers.BatchNormalization()
+        batch_3_3 = keras.layers.BatchNormalization()
+        x = CNN_3_1(x)
+        x_init = CNN_3_1(x_init)
         if use_batch_norm:
-            x = batch_3(x)
-            x_init = batch_3(x_init)
-        x_init = pool_3(x_init)
+            x = batch_3_1(x)
+            x_init = batch_3_1(x_init)
+        x = CNN_3_2(x)
+        x_init = CNN_3_2(x_init)
+        if use_batch_norm:
+            x = batch_3_2(x)
+            x_init = batch_3_2(x_init)
+        x = CNN_3_3(x)
+        x_init = CNN_3_3(x_init)
+        if use_batch_norm:
+            x = batch_3_3(x)
+            x_init = batch_3_3(x_init)
+        #x = pool_3(x)
+        #x_init = pool_3(x_init)
         if drop_out_rate > 0:
             drop3 = keras.layers.Dropout(rate=drop_out_rate)
             x = drop3(x)
             x_init = drop3(x_init)
-    if not h4 == 0:
-        CNN_4 = keras.layers.Conv2D(
-            filters=h4, kernel_size=3, activation=tf.nn.relu)
-        pool_4 = keras.layers.MaxPooling2D(pool_size=(2, 2))
-        x = CNN_4(x)
-        x = pool_4(x)
-        x_init = CNN_4(x_init)
-        if use_batch_norm:
-            batch_4 = keras.layers.BatchNormalization()
-            x = batch_4(x)
-            x_init = batch_4(x_init)
-        x_init = pool_4(x_init)
-        if drop_out_rate > 0:
-            drop4 = keras.layers.Dropout(rate=drop_out_rate)
-            x = drop4(x)
-            x_init = drop4(x_init)
     x = keras.layers.Flatten()(x)
     x_init = keras.layers.Flatten()(x_init)
     embedLayer = keras.layers.Dense(embed_size)

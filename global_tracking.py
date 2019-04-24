@@ -12,7 +12,7 @@ import logging
 np.random.seed(seed=42)
 exp_name = 'exp1'
 params_dict = {'dropout_rate': 0.4, 'n_epochs': 2,
-               'h3': 0, 'h4': 0, 'embed_size': 128}
+               'h3': 0, 'embed_size': 128}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
 data_dir = os.getenv('DATA_PATH')
@@ -48,8 +48,6 @@ if params_dict.get('h2') is None:
     params_dict['h2'] = 64
 if params_dict.get('h3') is None:
     params_dict['h3'] = 0
-if params_dict.get('h4') is None:
-    params_dict['h4'] = 0
 if params_dict.get('embed_size') is None:
     params_dict['embed_size'] = 64
 if params_dict.get('dropout_rate') is None:
@@ -85,7 +83,6 @@ for traindirs, testdirs in fold_iterator:
                          params_dict['h1'],
                          params_dict['h2'],
                          params_dict['h3'],
-                         params_dict['h4'],
                          embed_size=params_dict['embed_size'],
                          drop_out_rate=params_dict['dropout_rate'],
                          use_batch_norm=params_dict['use_batchnorm'])
@@ -99,7 +96,6 @@ for traindirs, testdirs in fold_iterator:
                             validation_data=validation_generator,
                             use_multiprocessing=True,
                             epochs=params_dict['n_epochs'],
-                            steps_per_epoch=200,
                             workers=4)
         model.save_weigths(os.path.join(checkpoint_dir, 'model.h5'))
 

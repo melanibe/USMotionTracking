@@ -14,7 +14,6 @@ def run_CV(params_dict, data_dir, n_splits=5):
     h1 = params_dict.get('h1') if params_dict.get('h1') is not None else 32
     h2 = params_dict.get('h2') if params_dict.get('h2') is not None else 64
     h3 = params_dict.get('h3') if params_dict.get('h3') is not None else 128
-    h4 = params_dict.get('h4') if params_dict.get('h4') is not None else 0
     embed_size = params_dict.get('embed_size') if params_dict.get(
         'embed_size') is not None else 128
     dropout_rate = params_dict.get('dropout_rate') if params_dict.get(
@@ -34,7 +33,7 @@ def run_CV(params_dict, data_dir, n_splits=5):
         validation_generator = DataLoader(
             data_dir, testdirs, 32, width_template=width, type='val')
         # Design model
-        model = create_model(width+1, h1, h2, h3, h4,
+        model = create_model(width+1, h1, h2, h3,
                              embed_size=embed_size,
                              drop_out_rate=dropout_rate,
                              use_batch_norm=use_batchnorm)
@@ -43,7 +42,6 @@ def run_CV(params_dict, data_dir, n_splits=5):
                             validation_data=validation_generator,
                             use_multiprocessing=True,
                             epochs=n_epochs,
-                            steps_per_epoch=200,
                             workers=4)
         list_dist_curr_fold = []
         mse_curr_fold = []
@@ -73,31 +71,19 @@ def run_CV(params_dict, data_dir, n_splits=5):
     # labels = model.predict(validation_generator)
 
 
-np.random.seed(seed=42)
-# Get the training data
-data_dir = os.getenv('DATA_PATH')
-print(data_dir)
-
-# default experiment
-params = {'dropout_rate': 0.4, 'n_epochs': 20,
-          'h3': 0, 'h4': 0, 'embed_size': 128}
-eucl_dist_per_fold, eucl_dist_dict = run_CV(params, data_dir)
-save_res = pd.DataFrame(eucl_dist_dict, index=[0])
-params_df = pd.DataFrame({}, index=[0])
-save_res['mean_over_folds'] = np.mean(eucl_dist_per_fold)
-save_res['std_over_folds'] = np.std(eucl_dist_per_fold)
-result = pd.concat([save_res, params_df], axis=1)
-result.to_csv(os.path.join('data_dir', 'results', 'default.csv'), index=False)
-print(result)
-
-
-# exp1
-params = {'dropout_rate': 0.4, 'n_epochs': 20, 'h3': 0, 'h4': 0}
-eucl_dist_per_fold, eucl_dist_dict = run_CV(params, data_dir)
-save_res = pd.DataFrame(eucl_dist_dict, index=[0])
-params_df = pd.DataFrame(params, index=[0])
-save_res['mean_over_folds'] = np.mean(eucl_dist_per_fold)
-save_res['std_over_folds'] = np.std(eucl_dist_per_fold)
-result = pd.concat([save_res, params_df], axis=1)
-result.to_csv(os.path.join('data_dir', 'results', 'exp1.csv'), index=False)
-print(result)
+if __name__=="__main__":
+    np.random.seed(seed=42)
+    # Get the training data
+    data_dir = os.getenv('DATA_PATH')
+    print(data_dir)
+    # default experiment
+    params = {'dropout_rate': 0.4, 'n_epochs': 15,
+                'h3': 0, 'embed_size': 128}
+    eucl_dist_per_fold, eucl_dist_dict = run_CV(params, data_dir)
+    save_res = pd.DataFrame(eucl_dist_dict, index=[0])
+    params_df = pd.DataFrame({}, index=[0])
+    save_res['mean_over_folds'] = np.mean(eucl_dist_per_fold)
+    save_res['std_over_folds'] = np.std(eucl_dist_per_fold)
+    result = pd.concat([save_res, params_df], axis=1)
+    result.to_csv(os.path.join('data_dir', 'results', 'default.csv'), index=False)
+    print(result)
