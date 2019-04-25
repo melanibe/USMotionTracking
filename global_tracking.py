@@ -140,11 +140,8 @@ for traindirs, testdirs in fold_iterator:
                 img_current = np.asarray(Image.open(list_imgs[i]))
                 c1, c2, maxNCC = global_template_search(c1,
                                                         c2,
-                                                        c1_init,
-                                                        c2_init,
                                                         img_prev,
                                                         img_current,
-                                                        img_init,
                                                         width=params_dict['width'])
                 xax, yax = find_template_pixel(c1, c2,
                                                width=params_dict['width'])

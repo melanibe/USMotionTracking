@@ -49,11 +49,8 @@ def find_new_template_center_NCC(c1, c2, im1, im2, width=60, c1_init=None, c2_in
 
 def global_template_search(c1,
                            c2,
-                           c1_init,
-                           c2_init,
                            im_prev,
                            im_current,
-                           im_init,
                            width=60):
     best_c1_1, best_c2_1, maxNCC_1 = find_new_template_center_NCC(c1, c2,
                                                                   im_prev,
