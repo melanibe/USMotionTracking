@@ -11,7 +11,7 @@ import logging
 
 np.random.seed(seed=42)
 exp_name = 'exp1'
-params_dict = {'dropout_rate': 0.4, 'n_epochs': 2,
+params_dict = {'dropout_rate': 0.4, 'n_epochs': 20,
                'h3': 0, 'embed_size': 128}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
@@ -87,18 +87,23 @@ for traindirs, testdirs in fold_iterator:
                          drop_out_rate=params_dict['dropout_rate'],
                          use_batch_norm=params_dict['use_batchnorm'])
     # Train model on training dataset
-
+    model.fit_generator(generator=training_generator,
+                        validation_data=validation_generator,
+                        use_multiprocessing=True,
+                        epochs=params_dict['n_epochs'],
+                        workers=4)
+    '''
     try:
         model.load_weights(os.path.join(checkpoint_dir, 'model.h5'))
     except OSError:
         print('here')
-        model.fit_generator(generator=training_generator,
-                            validation_data=validation_generator,
-                            use_multiprocessing=True,
-                            epochs=params_dict['n_epochs'],
-                            workers=4)
+		model.fit_generator(generator=training_generator,
+		                    validation_data=validation_generator,
+		                    use_multiprocessing=True,
+		                    epochs=params_dict['n_epochs'],
+		                    workers=4)
         model.save_weigths(os.path.join(checkpoint_dir, 'model.h5'))
-
+    '''
     # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
     curr_fold_dist = []
     curr_fold_pix = []
@@ -118,13 +123,13 @@ for traindirs, testdirs in fold_iterator:
         print(list_label_files)
         img_init = np.asarray(Image.open(list_imgs[0]))
         for label_file in list_label_files:
-            list_centers = [[]]
             img_current = np.asarray(Image.open(list_imgs[0]))
             df = pd.read_csv(label_file,
                              header=None,
                              names=['id', 'x', 'y'],
                              sep='\s+')
             c1_init, c2_init = df.loc[df['id'] == 1, ['x', 'y']].values[0, :]
+            list_centers = [[c1_init, c2_init]]
             c1, c2 = df.loc[df['id'] == 1, ['x', 'y']].values[0, :]
             xax, yax = find_template_pixel(c1_init, c2_init,
                                            width=params_dict['width'])
@@ -165,9 +170,8 @@ for traindirs, testdirs in fold_iterator:
                     print('Init dist before local {}'.format(orig_dist))
                     if dist > 3:
                         print('Bad dist - maxNCC was {}'.format(maxNCC))
-            np.save(os.path.join(checkpoint_dir, testfolder, ))
             idx = df.id.values[1:len(df)]
-            df_preds = list_centers[idx-1]
+            df_preds = list_centers[int(idx)]
             df_true = df[['x', 'y']].values[1:len(df)]
             absolute_diff = np.mean(np.abs(df_preds-df_true))
             pix_dist = np.mean(
@@ -181,8 +185,6 @@ for traindirs, testdirs in fold_iterator:
             logger.info('Euclidean distance in mm {}'.format(dist))
             logger.info(
                 'Mean absolute difference in pixels {}'.format(absolute_diff))
-            np.save(os.path.join(checkpoint_dir, 'center_{}'.format(label_file)),
-                    list_centers)
     eucl_dist_per_fold = np.append(eucl_dist_per_fold, np.mean(curr_fold_dist))
     pixel_dist_per_fold = np.append(
         pixel_dist_per_fold, np.mean(curr_fold_pix))
