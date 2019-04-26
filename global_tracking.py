@@ -10,9 +10,9 @@ from tensorflow import keras
 import logging
 
 np.random.seed(seed=42)
-exp_name = 'exp1'
+exp_name = 'exp_60'
 params_dict = {'dropout_rate': 0.4, 'n_epochs': 20,
-               'h3': 0, 'embed_size': 128}
+               'h3': 0, 'embed_size': 128, 'width': 60}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
 data_dir = os.getenv('DATA_PATH')
@@ -87,6 +87,7 @@ for traindirs, testdirs in fold_iterator:
                          drop_out_rate=params_dict['dropout_rate'],
                          use_batch_norm=params_dict['use_batchnorm'])
     # Train model on training dataset
+    '''
     model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
                         use_multiprocessing=True,
@@ -94,16 +95,15 @@ for traindirs, testdirs in fold_iterator:
                         workers=4)
     '''
     try:
-        model.load_weights(os.path.join(checkpoint_dir, 'model.h5'))
+        model.load_weights(os.path.join(checkpoint_dir, 'model22.h5'))
     except OSError:
         print('here')
-		model.fit_generator(generator=training_generator,
-		                    validation_data=validation_generator,
-		                    use_multiprocessing=True,
-		                    epochs=params_dict['n_epochs'],
-		                    workers=4)
-        model.save_weigths(os.path.join(checkpoint_dir, 'model.h5'))
-    '''
+        model.fit_generator(generator=training_generator,
+                        validation_data=validation_generator,
+		                use_multiprocessing=True,
+		                epochs=params_dict['n_epochs'])
+        model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
+    
     # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
     curr_fold_dist = []
     curr_fold_pix = []
@@ -170,8 +170,9 @@ for traindirs, testdirs in fold_iterator:
                     print('Init dist before local {}'.format(orig_dist))
                     if dist > 3:
                         print('Bad dist - maxNCC was {}'.format(maxNCC))
-            idx = df.id.values[1:len(df)]
-            df_preds = list_centers[int(idx)]
+            idx = df.id.values[1:len(df)].astype(int)
+            list_centers = list_centers.reshape(-1,2)
+            df_preds = list_centers[idx]
             df_true = df[['x', 'y']].values[1:len(df)]
             absolute_diff = np.mean(np.abs(df_preds-df_true))
             pix_dist = np.mean(
