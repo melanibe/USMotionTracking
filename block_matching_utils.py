@@ -40,7 +40,10 @@ def find_new_template_center_NCC(c1, c2, im1, im2, width=60, c1_init=None, c2_in
         x2 = x2 - np.mean(x2)
         num = np.sum(x1*x2)
         denom = np.sqrt(np.sum(x1**2)*np.sum(x2**2))
-        NCC_all.append(num/denom)
+        if denom == 0:
+            NCC_all.append(0)
+        else:
+            NCC_all.append(num/denom)
     maxNCC = np.max(NCC_all)
     idx = np.argmax(NCC_all)
     best_c1, best_c2 = np.ravel(searchx)[idx], np.ravel(searchy)[idx]
