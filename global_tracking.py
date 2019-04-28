@@ -10,9 +10,9 @@ from tensorflow import keras
 import logging
 
 np.random.seed(seed=42)
-exp_name = 'exp_60'
+exp_name = 'exp_80'
 params_dict = {'dropout_rate': 0.4, 'n_epochs': 20,
-               'h3': 0, 'embed_size': 128, 'width': 60}
+               'h3': 0, 'embed_size': 128, 'width': 80}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
 data_dir = os.getenv('DATA_PATH')
@@ -170,13 +170,21 @@ for traindirs, testdirs in fold_iterator:
                     print('Init dist before local {}'.format(orig_dist))
                     if dist > 3:
                         print('Bad dist - maxNCC was {}'.format(maxNCC))
-            idx = df.id.values[1:len(df)].astype(int)
+            idx = df.id.values.astype(int)
+            idx = np.delete(idx, 0)
             list_centers = list_centers.reshape(-1,2)
-            df_preds = list_centers[idx]
-            df_true = df[['x', 'y']].values[1:len(df)]
+            df_preds = list_centers[idx-1]
+            df_true = df[['x', 'y']].values
+            try:
+                assert len(idx)==len(df_true)
+            except AssertionError:
+                print(label_file)
+                print(len(idx))
+                print(len(df_true))
+            df_true = np.delete(df_true, 0, 0)
             absolute_diff = np.mean(np.abs(df_preds-df_true))
             pix_dist = np.mean(
-                np.sqrt((df_preds[0]-df_true[0])**2+(df_preds[1]-df_true[1])**2))
+                    np.sqrt((df_preds[:, 0]-df_true[:,0])**2+(df_preds[:,1]-df_true[:,1])**2))
             dist = compute_euclidean_distance(
                 kf.resolution_df, testfolder, df_preds, df_true)
             curr_fold_dist.append(dist)
