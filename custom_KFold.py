@@ -32,10 +32,13 @@ class MyKFold:
         """for the estimators that need features"""
         p = 0
         print(len(self.listdir))
-        while p < len(self.listdir):
-            test_indices = np.arange(
-                p, min(len(self.listdir), p+self.dir_per_fold), dtype='int')
-            print(test_indices)
+        for fold in range(self.n_splits):
+            if fold == (self.n_splits-1):
+                test_indices = np.arange(
+                    p, len(self.listdir), dtype='int')
+            else:
+                test_indices = np.arange(
+                    p, p+self.dir_per_fold, dtype='int')
             print(p)
             test_dirs = self.listdir[test_indices]
             print(test_dirs)
@@ -52,13 +55,13 @@ class MyKFold:
         p = 0
         print(len(self.listdir))
         listdir = np.random.permutation(self.listdir)
-        # shuffle list of scans here
-        # check the template size to use
-        while p < len(self.listdir):
-            test_indices = np.arange(
-                p, min(len(self.listdir), p+self.dir_per_fold), dtype='int')
-            print(test_indices)
-            print(p)
+        for fold in range(self.n_splits):
+            if fold == (self.n_splits-1):
+                test_indices = np.arange(
+                    p, len(self.listdir), dtype='int')
+            else:
+                test_indices = np.arange(
+                    p, p+self.dir_per_fold, dtype='int')
             test_dirs = listdir[test_indices]
             print(test_dirs)
             train_dirs = np.delete(listdir, test_indices)
