@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 from dataLoader import metrics_distance
 
-def create_model_old(img_size,
+def create_model(img_size,
                  h1=32, h2=64, h3=128,
                  embed_size=128, d1=32,
                  drop_out_rate=0.1,
@@ -131,7 +131,7 @@ def create_model_old(img_size,
     return model
 
 
-def create_model(img_size,
+def create_model_trial(img_size,
                  h1=32, h2=64, h3=128,
                  embed_size=128, d1=32,
                  drop_out_rate=0.1,
