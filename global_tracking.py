@@ -10,9 +10,9 @@ from tensorflow import keras
 import logging
 
 np.random.seed(seed=42)
-exp_name = 'exp_80_mean_40'
-params_dict = {'dropout_rate': 0.4, 'n_epochs': 40,
-               'h3': 0, 'embed_size': 128, 'width': 80}
+exp_name = 'exp_80_mean_1024_40'
+params_dict = {'dropout_rate': 0.5, 'n_epochs': 40,
+          'h3': 0, 'embed_size': 1024, 'width': 80}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
 data_dir = os.getenv('DATA_PATH')
@@ -99,11 +99,11 @@ for traindirs, testdirs in fold_iterator:
     except OSError:
         print('here')
         model.fit_generator(generator=training_generator,
-                        validation_data=validation_generator,
-		                use_multiprocessing=True,
-		                epochs=params_dict['n_epochs'])
+                            validation_data=validation_generator,
+                            use_multiprocessing=True,
+                            epochs=params_dict['n_epochs'])
         model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
-    
+
     # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
     curr_fold_dist = []
     curr_fold_pix = []
@@ -157,7 +157,7 @@ for traindirs, testdirs in fold_iterator:
                     x=[template_current, template_init, current_centers])
                 old_c1, old_c2 = c1, c2
                 c1, c2 = pred[0, 0], pred[0, 1]
-                if np.sqrt((old_c1-c1)**2+(old_c2-c2)**2)>10:
+                if np.sqrt((old_c1-c1)**2+(old_c2-c2)**2) > 10:
                     logger.info('WARN: weird prediction mean both maxNCC pred')
                     c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
                 list_centers = np.append(list_centers, [c1, c2])
@@ -175,11 +175,11 @@ for traindirs, testdirs in fold_iterator:
                         print('Bad dist - maxNCC was {}'.format(maxNCC))
             idx = df.id.values.astype(int)
             idx = np.delete(idx, 0)
-            list_centers = list_centers.reshape(-1,2)
+            list_centers = list_centers.reshape(-1, 2)
             df_preds = list_centers[idx-1]
             df_true = df[['x', 'y']].values
             try:
-                assert len(idx)==len(df_true)
+                assert len(idx) == len(df_true)
             except AssertionError:
                 print(label_file)
                 print(len(idx))
@@ -187,7 +187,7 @@ for traindirs, testdirs in fold_iterator:
             df_true = np.delete(df_true, 0, 0)
             absolute_diff = np.mean(np.abs(df_preds-df_true))
             pix_dist = np.mean(
-                    np.sqrt((df_preds[:, 0]-df_true[:,0])**2+(df_preds[:,1]-df_true[:,1])**2))
+                np.sqrt((df_preds[:, 0]-df_true[:, 0])**2+(df_preds[:, 1]-df_true[:, 1])**2))
             dist = compute_euclidean_distance(
                 kf.resolution_df, testfolder, df_preds, df_true)
             curr_fold_dist.append(dist)
@@ -197,6 +197,10 @@ for traindirs, testdirs in fold_iterator:
             logger.info('Euclidean distance in mm {}'.format(dist))
             logger.info(
                 'Mean absolute difference in pixels {}'.format(absolute_diff))
+            np.save(os.path.join(checkpoint_dir,
+                                 'list_preds_{}'.format(label_file)), df_preds)
+            np.save(os.path.join(checkpoint_dir,
+                                 'list_true_{}'.format(label_file)), df_true)
     eucl_dist_per_fold = np.append(eucl_dist_per_fold, np.mean(curr_fold_dist))
     pixel_dist_per_fold = np.append(
         pixel_dist_per_fold, np.mean(curr_fold_pix))
