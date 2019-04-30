@@ -32,11 +32,11 @@ def create_model(img_size,
     if use_batch_norm:
         x = batch_1_1(x)
         x_init = batch_1_1(x_init)
-    x = CNN_1_2(x)
-    x_init = CNN_1_2(x_init)
-    if use_batch_norm:
-        x = batch_1_2(x)
-        x_init = batch_1_2(x_init)
+    # x = CNN_1_2(x)
+    # x_init = CNN_1_2(x_init)
+    # if use_batch_norm:
+    #     x = batch_1_2(x)
+    #     x_init = batch_1_2(x_init)
     x = CNN_1_3(x)
     x_init = CNN_1_3(x_init)
     if use_batch_norm:
@@ -64,11 +64,11 @@ def create_model(img_size,
         if use_batch_norm:
             x = batch_2_1(x)
             x_init = batch_2_1(x_init)
-        x = CNN_2_2(x)
-        x_init = CNN_2_2(x_init)
-        if use_batch_norm:
-            x = batch_2_2(x)
-            x_init = batch_2_2(x_init)
+        # x = CNN_2_2(x)
+        # x_init = CNN_2_2(x_init)
+        # if use_batch_norm:
+        #     x = batch_2_2(x)
+        #     x_init = batch_2_2(x_init)
         x = CNN_2_3(x)
         x_init = CNN_2_3(x_init)
         if use_batch_norm:
