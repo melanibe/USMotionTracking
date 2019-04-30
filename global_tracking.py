@@ -10,8 +10,8 @@ from tensorflow import keras
 import logging
 
 np.random.seed(seed=42)
-exp_name = 'exp_80'
-params_dict = {'dropout_rate': 0.4, 'n_epochs': 20,
+exp_name = 'exp_80_mean_40'
+params_dict = {'dropout_rate': 0.4, 'n_epochs': 40,
                'h3': 0, 'embed_size': 128, 'width': 80}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
@@ -158,8 +158,8 @@ for traindirs, testdirs in fold_iterator:
                 old_c1, old_c2 = c1, c2
                 c1, c2 = pred[0, 0], pred[0, 1]
                 if np.sqrt((old_c1-c1)**2+(old_c2-c2)**2)>10:
-                    print('WARN: weird prediction keep maxNCC pred')
-                    c1, c2 = old_c1, old_c2
+                    logger.info('WARN: weird prediction mean both maxNCC pred')
+                    c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
                 list_centers = np.append(list_centers, [c1, c2])
                 if i in df.id.values:
                     true = df.loc[df['id'] == i, ['x', 'y']].values[0]
