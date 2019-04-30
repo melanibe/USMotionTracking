@@ -78,7 +78,7 @@ if __name__=="__main__":
     print(data_dir)
     # default experiment
     params = {'dropout_rate': 0.4, 'n_epochs': 40,
-                'h3': 64, 'embed_size': 128}
+                'h3': 0, 'embed_size': 256, 'width': 80}
     eucl_dist_per_fold, eucl_dist_dict = run_CV(params, data_dir)
     save_res = pd.DataFrame(eucl_dist_dict, index=[0])
     params_df = pd.DataFrame({}, index=[0])
