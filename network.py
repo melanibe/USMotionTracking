@@ -4,7 +4,7 @@ from dataLoader import metrics_distance
 
 def create_model(img_size,
                  h1=32, h2=64, h3=128,
-                 embed_size=128, d1=32,
+                 embed_size=128, d1=256,
                  drop_out_rate=0.1,
                  use_batch_norm=True):
     """ This functions defines initializes the model.
