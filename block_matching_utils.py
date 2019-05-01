@@ -20,8 +20,8 @@ def find_template_pixel(c1, c2, width=60):
     return np.meshgrid(xax, yax)
 
 
-def find_new_template_center_NCC(c1, c2, im1, im2, width=60, c1_init=None, c2_init=None):
-    searchx, searchy = find_search_pixel(c1, c2)
+def find_new_template_center_NCC(c1, c2, im1, im2, width=60, c1_init=None, c2_init=None, search_w = 100):
+    searchx, searchy = find_search_pixel(c1, c2, search_w)
     if c1_init is None:
         xv, yv = find_template_pixel(c1, c2, width)
     else:
