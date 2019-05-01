@@ -109,8 +109,8 @@ class DataLoader(keras.utils.Sequence):
                 self.orig_labels_y = np.append(
                     self.orig_labels_y, df.y.values[1:n_obs])
         self.shuffle = shuffle
-        self.u_x_list = np.random.randn(len(self.orig_labels_y))*5
-        self.u_y_list = np.random.randn(len(self.orig_labels_y))*5
+        self.u_x_list = np.random.randn(len(self.orig_labels_x))*4
+        self.u_y_list = np.random.randn(len(self.orig_labels_y))*4
         if self.type == 'val':
             self.shuffle = False  # don't shuffle if test set.
         self.on_epoch_end()

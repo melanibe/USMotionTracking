@@ -10,9 +10,9 @@ from tensorflow import keras
 import logging
 
 np.random.seed(seed=42)
-exp_name = 'exp_80_mean_1024_40'
+exp_name = 'exp_40_mean_256_40'
 params_dict = {'dropout_rate': 0.5, 'n_epochs': 40,
-          'h3': 0, 'embed_size': 1024, 'width': 80}
+        'h3': 0, 'embed_size': 256, 'width': 40}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
 data_dir = os.getenv('DATA_PATH')
@@ -107,7 +107,7 @@ for traindirs, testdirs in fold_iterator:
     # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
     curr_fold_dist = []
     curr_fold_pix = []
-    for testfolder in testdirs:
+    for k,testfolder in enumerate(testdirs):
         annotation_dir = os.path.join(data_dir, testfolder, 'Annotation')
         img_dir = os.path.join(data_dir, testfolder, 'Data')
         list_imgs = [os.path.join(img_dir, dI)
@@ -122,7 +122,7 @@ for traindirs, testdirs in fold_iterator:
         list_label_files.sort()
         print(list_label_files)
         img_init = np.asarray(Image.open(list_imgs[0]))
-        for label_file in list_label_files:
+        for j,label_file in enumerate(list_label_files):
             img_current = np.asarray(Image.open(list_imgs[0]))
             df = pd.read_csv(label_file,
                              header=None,
@@ -198,9 +198,10 @@ for traindirs, testdirs in fold_iterator:
             logger.info(
                 'Mean absolute difference in pixels {}'.format(absolute_diff))
             np.save(os.path.join(checkpoint_dir,
-                                 'list_preds_{}'.format(label_file)), df_preds)
+                                 'list_preds_{}_fold{}'.format(j,k)), df_preds)
             np.save(os.path.join(checkpoint_dir,
-                                 'list_true_{}'.format(label_file)), df_true)
+                                 'list_true_{}_fold{}'.format(j,k)), df_true)
+            np.save(os.path.join(checkpoint_dir, 'list_full_center_{}_{}'.format(j,k)), list_centers)
     eucl_dist_per_fold = np.append(eucl_dist_per_fold, np.mean(curr_fold_dist))
     pixel_dist_per_fold = np.append(
         pixel_dist_per_fold, np.mean(curr_fold_pix))
