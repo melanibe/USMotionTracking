@@ -89,8 +89,6 @@ class DataLoader(keras.utils.Sequence):
                                                                            subfolder, 'Data', "0001.png"), n_obs-1)
                                                     )
                 except FileNotFoundError:
-                    Image.open(os.path.join(self.data_dir,
-                                            subfolder, 'Data', "00001.png"))
                     self.list_imgs = np.append(self.list_imgs,
                                                [os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(i)))
                                                 for i in df.id.values[1:n_obs]]
@@ -160,7 +158,13 @@ class DataLoader(keras.utils.Sequence):
 
         for i, idx in enumerate(indexes):
             img = np.asarray(Image.open(self.list_imgs[idx]))
+            mean = np.mean(img)
+            sd = np.std(img)
+            img = (img-mean)/sd
             img_init = np.asarray(Image.open(self.list_imgs_init[idx]))
+            mean = np.mean(img_init)
+            sd = np.std(img_init)
+            img_init = (img_init-mean)/sd          
             c1_init = self.list_init_x[idx]
             c2_init = self.list_init_y[idx]
             xax, yax = find_template_pixel(

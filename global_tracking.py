@@ -122,8 +122,14 @@ for traindirs, testdirs in fold_iterator:
         list_label_files.sort()
         print(list_label_files)
         img_init = np.asarray(Image.open(list_imgs[0]))
+        mean = np.mean(img_init)
+        sd = np.std(img_init)
+        img_init = (img_init - mean)/sd
         for j,label_file in enumerate(list_label_files):
             img_current = np.asarray(Image.open(list_imgs[0]))
+            mean = np.mean(img_current)
+            sd = np.std(img_current)
+            img_current = (img_current - mean)/sd
             df = pd.read_csv(label_file,
                              header=None,
                              names=['id', 'x', 'y'],
@@ -143,6 +149,9 @@ for traindirs, testdirs in fold_iterator:
                 img_prev = img_current
                 # modify like in DataLoader
                 img_current = np.asarray(Image.open(list_imgs[i]))
+                mean = np.mean(img_current)
+                sd = np.std(img_current)
+                img_current = (img_current - mean)/sd
                 c1, c2, maxNCC = global_template_search(c1,
                                                         c2,
                                                         img_prev,
