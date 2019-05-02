@@ -10,9 +10,9 @@ from tensorflow import keras
 import logging
 
 np.random.seed(seed=42)
-exp_name = 'exp_60_40_512_se60'
-params_dict = {'dropout_rate': 0.5, 'n_epochs': 40,
-        'h3': 0, 'embed_size': 512, 'width': 60, 'search_w': 60}
+exp_name = 'exp_80_50_128_se60'
+params_dict = {'dropout_rate': 0.5, 'n_epochs': 50,
+        'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 60}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
 data_dir = os.getenv('DATA_PATH')

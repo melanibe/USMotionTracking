@@ -4,8 +4,9 @@ import numpy as np
 
 
 def find_search_pixel(c1, c2, width=100):
-    xax = np.linspace(c1-width/2, c1+width/2, 51, dtype='int')
-    yax = np.linspace(c2-width/2, c2+width/2, 51, dtype='int')
+    nb_points = width/2+1
+    xax = np.linspace(c1-width/2, c1+width/2, nb_points, dtype='int')
+    yax = np.linspace(c2-width/2, c2+width/2, nb_points, dtype='int')
     #xax = np.arange(int(c1)-25, int(c1)+26, step=1)
     #yax = np.arange(int(c2)-25, int(c2)+26, step=1)
     # all the x,y in the template centered around c1, c2
@@ -57,9 +58,9 @@ def global_template_search(c1,
                            c2,
                            im_prev,
                            im_current,
-                           width=60):
+                           width=60, search_w=100):
     best_c1_1, best_c2_1, maxNCC_1 = find_new_template_center_NCC(c1, c2,
                                                                   im_prev,
                                                                   im_current,
-                                                                  width)
+                                                                  width, search_w=search_w)
     return best_c1_1, best_c2_1, maxNCC_1
