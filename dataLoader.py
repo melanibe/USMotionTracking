@@ -158,13 +158,9 @@ class DataLoader(keras.utils.Sequence):
 
         for i, idx in enumerate(indexes):
             img = np.asarray(Image.open(self.list_imgs[idx]))
-            mean = np.mean(img)
-            sd = np.std(img)
-            img = (img-mean)/sd
+            img = img/255.0
             img_init = np.asarray(Image.open(self.list_imgs_init[idx]))
-            mean = np.mean(img_init)
-            sd = np.std(img_init)
-            img_init = (img_init-mean)/sd          
+            img_init = img_init/255.0         
             c1_init = self.list_init_x[idx]
             c2_init = self.list_init_y[idx]
             xax, yax = find_template_pixel(

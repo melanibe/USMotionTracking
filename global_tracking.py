@@ -11,7 +11,7 @@ import logging
 
 np.random.seed(seed=42)
 exp_name = 'exp_80_50_128_se60'
-params_dict = {'dropout_rate': 0.5, 'n_epochs': 50,
+params_dict = {'dropout_rate': 0.5, 'n_epochs': 1,
         'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 60}
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
@@ -122,14 +122,10 @@ for traindirs, testdirs in fold_iterator:
         list_label_files.sort()
         print(list_label_files)
         img_init = np.asarray(Image.open(list_imgs[0]))
-        mean = np.mean(img_init)
-        sd = np.std(img_init)
-        img_init = (img_init - mean)/sd
+        img_init = img_init/255.0
         for j,label_file in enumerate(list_label_files):
             img_current = np.asarray(Image.open(list_imgs[0]))
-            mean = np.mean(img_current)
-            sd = np.std(img_current)
-            img_current = (img_current - mean)/sd
+            img_current = img_current/255.0
             df = pd.read_csv(label_file,
                              header=None,
                              names=['id', 'x', 'y'],
@@ -149,9 +145,7 @@ for traindirs, testdirs in fold_iterator:
                 img_prev = img_current
                 # modify like in DataLoader
                 img_current = np.asarray(Image.open(list_imgs[i]))
-                mean = np.mean(img_current)
-                sd = np.std(img_current)
-                img_current = (img_current - mean)/sd
+                img_current = img_current/255.0
                 c1, c2, maxNCC = global_template_search(c1,
                                                         c2,
                                                         img_prev,
