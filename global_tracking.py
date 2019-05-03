@@ -10,9 +10,10 @@ from tensorflow import keras
 import logging
 
 np.random.seed(seed=42)
-exp_name = 'exp_80_40_128_se40'
+exp_name = 'exp_80_40_128_se60'
 params_dict = {'dropout_rate': 0.5, 'n_epochs': 40,
-        'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 40}
+        'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 60}
+
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
 data_dir = os.getenv('DATA_PATH')
@@ -87,14 +88,14 @@ for traindirs, testdirs in fold_iterator:
                          drop_out_rate=params_dict['dropout_rate'],
                          use_batch_norm=params_dict['use_batchnorm'])
     # Train model on training dataset
-    '''
+    
     model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
                         use_multiprocessing=True,
                         epochs=params_dict['n_epochs'],
                         workers=4)
     '''
-    try:
+        try:
         model.load_weights(os.path.join(checkpoint_dir, 'model22.h5'))
     except OSError:
         print('here')
@@ -103,7 +104,7 @@ for traindirs, testdirs in fold_iterator:
                             use_multiprocessing=True,
                             epochs=params_dict['n_epochs'])
         model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
-
+    '''
     # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
     curr_fold_dist = []
     curr_fold_pix = []
@@ -122,14 +123,10 @@ for traindirs, testdirs in fold_iterator:
         list_label_files.sort()
         print(list_label_files)
         img_init = np.asarray(Image.open(list_imgs[0]))
-        mean = np.mean(img_init)
-        sd = np.std(img_init)
-        img_init = (img_init - mean)/sd
+        img_init = img_init/255.0
         for j,label_file in enumerate(list_label_files):
             img_current = np.asarray(Image.open(list_imgs[0]))
-            mean = np.mean(img_current)
-            sd = np.std(img_current)
-            img_current = (img_current - mean)/sd
+            img_current = img_current/255.0
             df = pd.read_csv(label_file,
                              header=None,
                              names=['id', 'x', 'y'],
@@ -149,9 +146,7 @@ for traindirs, testdirs in fold_iterator:
                 img_prev = img_current
                 # modify like in DataLoader
                 img_current = np.asarray(Image.open(list_imgs[i]))
-                mean = np.mean(img_current)
-                sd = np.std(img_current)
-                img_current = (img_current - mean)/sd
+                img_current = img_current/255.0
                 c1, c2, maxNCC = global_template_search(c1,
                                                         c2,
                                                         img_prev,
