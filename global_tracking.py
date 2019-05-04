@@ -77,7 +77,6 @@ def run_global_cv(fold_iterator, logger, params_dict):
             model.fit_generator(generator=training_generator,
                                 use_multiprocessing=True,
                                 epochs=params_dict['n_epochs'],
-                                steps_per_epoch=100,
                                 workers=6)
             model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
 
@@ -272,8 +271,8 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'exp_80_50_128_se60'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 5,
+    exp_name = 'new_exp_80_25_128_se60'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
                    'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 60}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
