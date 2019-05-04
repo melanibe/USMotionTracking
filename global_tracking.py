@@ -75,6 +75,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
         except OSError:
             print('here')
             model.fit_generator(generator=training_generator,
+                                validation_data=validation_generator,
                                 use_multiprocessing=True,
                                 epochs=params_dict['n_epochs'],
                                 workers=6)
@@ -263,7 +264,7 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
             list_centers, [c1_orig_coords, c2_orig_coords])
         list_centers = list_centers.reshape(-1, 2)
     pred_df = pd.DataFrame()
-    pred_df['id'] = range(1, n_obs+1)
+    pred_df['id'] = np.arange(1, n_obs)
     pred_df['c1'] = list_centers[:, 0]
     pred_df['c2'] = list_centers[:, 1]
     return pred_df
