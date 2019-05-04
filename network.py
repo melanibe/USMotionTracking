@@ -2,6 +2,11 @@ import tensorflow as tf
 from tensorflow import keras
 from dataLoader import metrics_distance
 
+'''
+Mélanie Bernhardt - ETH Zurich
+CLUST Challenge
+'''
+
 def create_model(img_size,
                  h1=32, h2=64, h3=128,
                  embed_size=128, d1=256,

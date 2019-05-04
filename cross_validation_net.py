@@ -5,6 +5,10 @@ from custom_KFold import MyKFold
 from network import create_model
 import pandas as pd
 
+'''
+Mélanie Bernhardt - ETH Zurich
+CLUST Challenge
+'''
 
 def run_CV(params_dict, data_dir, n_splits=5):
     width = params_dict.get('width') if params_dict.get(

@@ -4,6 +4,10 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from train_local_tracking import get_all_local_features
 
+'''
+Mélanie Bernhardt - ETH Zurich
+CLUST Challenge
+'''
 
 class MyKFold:
     def __init__(self, data_dir, n_splits=3, width_template=60, bins=20):
