@@ -300,4 +300,4 @@ if __name__ == '__main__':
     kf = MyKFold(data_dir, n_splits=5)
     fold_iterator = kf.getFolderIterator()
 
-    run_global_cv(fold_iterator, logger)
+    run_global_cv(fold_iterator, logger, params_dict)
