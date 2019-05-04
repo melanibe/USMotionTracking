@@ -20,7 +20,22 @@ def find_template_pixel(c1, c2, width=60):
     # all the x,y in the template centered around c1, c2
     return np.meshgrid(xax, yax)
 
-
+# listz = parmap.starmap(myfunction, zip(listx, listy), param1, param2)
+def get_NCC(i, j, im1, im2, width, yv, xv):
+        tmp_x, tmp_y = find_template_pixel(i, j)
+        try:
+            x1 = np.ravel(im1[np.ravel(yv), np.ravel(xv)])
+            x2 = np.ravel(im2[np.ravel(tmp_y), np.ravel(tmp_x)])
+            x1 = x1 - np.mean(x1)
+            x2 = x2 - np.mean(x2)
+            num = np.sum(x1*x2)
+            denom = np.sqrt(np.sum(x1**2)*np.sum(x2**2))
+            if denom == 0:
+                return 0
+            else:
+                return num/denom
+        except IndexError:
+            NCC_all.append(0)  
 def find_new_template_center_NCC(c1, c2, im1, im2, width=60, c1_init=None, c2_init=None, search_w = 100):
     searchx, searchy = find_search_pixel(c1, c2, search_w)
     if c1_init is None:

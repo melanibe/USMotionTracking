@@ -5,20 +5,21 @@ import pandas as pd
 from block_matching_utils import find_template_pixel
 from tensorflow import keras
 import tensorflow as tf
-def metrics_distance(labels, preds):
-    return compute_euclidean_distance_tf(None, "", preds, labels)
+from scipy.misc import imresize
 
-def compute_euclidean_distance_tf(res_df, exp_name, preds, labels):
-    if res_df is not None:
-        curr_res_x = res_df.loc[res_df['scan'] == exp_name, 'res_x'].values[0]
-        curr_res_y = res_df.loc[res_df['scan'] == exp_name, 'res_y'].values[0]
-    else:
-        curr_res_x = 1
-        curr_res_y = 1
+
+def metrics_distance(labels, preds):
+    return compute_euclidean_distance_tf(preds, labels)
+
+
+def compute_euclidean_distance_tf(preds, labels):
+    curr_res_x = 0.27
+    curr_res_y = 0.27
     return tf.reduce_mean(
         tf.sqrt(((preds[:, 0] - labels[:, 0])*curr_res_x)**2 +
                 ((preds[:, 1] - labels[:, 1])*curr_res_y)**2)
     )
+
 
 def compute_euclidean_distance(res_df, exp_name, preds, labels):
     if res_df is not None:
@@ -54,10 +55,16 @@ class DataLoader(keras.utils.Sequence):
         self.orig_labels_x = []
         self.orig_labels_y = []
         self.list_imgs_init = []
+        self.list_res_x = []
+        self.list_res_y = []
         self.resolution_df = pd.read_csv(os.path.join(data_dir, 'resolution.csv'),
                                          sep=',\s+',
                                          decimal='.')
         for subfolder in self.list_dir:
+            res_x = self.resolution_df.loc[self.resolution_df['scan']
+                                           == subfolder, 'res_x'].values[0]
+            res_y = self.resolution_df.loc[self.resolution_df['scan']
+                                           == subfolder, 'res_y'].values[0]
             current_dir = os.path.join(self.data_dir, subfolder)
             annotation_dir = os.path.join(current_dir, 'Annotation')
             img_dir = os.path.join(current_dir, 'Data')
@@ -97,7 +104,10 @@ class DataLoader(keras.utils.Sequence):
                                                     np.repeat(os.path.join(self.data_dir,
                                                                            subfolder, 'Data',  "00001.png"), n_obs-1)
                                                     )
-
+                self.list_res_x = np.append(
+                    self.list_res_x, np.repeat(res_x, n_obs-1))
+                self.list_res_y = np.append(
+                    self.list_res_y, np.repeat(res_y, n_obs-1))
                 self.list_init_x = np.append(
                     self.list_init_x, np.repeat(df.x.values[0], n_obs-1))
                 self.list_init_y = np.append(
@@ -142,8 +152,8 @@ class DataLoader(keras.utils.Sequence):
         batch_centers = np.zeros((len(indexes), 2))
         batch_orig_centers[:, 0] = self.orig_labels_x[indexes]
         batch_orig_centers[:, 1] = self.orig_labels_y[indexes]
-        #batch_init_x = self.list_init_x[indexes]
-        #batch_init_y = self.list_init_y[indexes]
+        # batch_init_x = self.list_init_x[indexes]
+        # batch_init_y = self.list_init_y[indexes]
         batch_labels = np.zeros((len(indexes), 2))
         batch_imgs = np.zeros(
             (len(indexes),
@@ -158,9 +168,16 @@ class DataLoader(keras.utils.Sequence):
 
         for i, idx in enumerate(indexes):
             img = np.asarray(Image.open(self.list_imgs[idx]))
+            #print('old size {}'.format(img.shape))
+            img = imresize(
+                img, (int(np.floor(img.shape[0]*self.list_res_x[idx]/0.27)), 
+                int(np.floor(img.shape[1]*self.list_res_y[idx]/0.27))), 'bilinear')
+            #print('new size {}'.format(img.shape))
+            #print(self.list_res_x[idx])
+            #print(self.list_res_y[idx])
             img = img/255.0
             img_init = np.asarray(Image.open(self.list_imgs_init[idx]))
-            img_init = img_init/255.0         
+            img_init = img_init/255.0
             c1_init = self.list_init_x[idx]
             c2_init = self.list_init_y[idx]
             xax, yax = find_template_pixel(

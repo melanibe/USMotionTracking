@@ -8,11 +8,12 @@ from PIL import Image
 import pandas as pd
 from tensorflow import keras
 import logging
-
+from scipy.misc import imresize
+import tensorflow as tf
 np.random.seed(seed=42)
-exp_name = 'exp_80_40_128_se60'
+exp_name = 'exp_new_80_100_40'
 params_dict = {'dropout_rate': 0.5, 'n_epochs': 40,
-        'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 60}
+               'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 100}
 
 
 # ============ DATA AND SAVING DIRS SETUP ========== #
@@ -63,6 +64,7 @@ for key in params_dict.keys():
     logger.info('  {}: {}'.format(key.upper(), params_dict[key]))
 logger.info('Saving checkpoint to {}'.format(checkpoint_dir))
 
+tf.keras.backend.clear_session()
 
 # KFold iterator
 kf = MyKFold(data_dir, n_splits=5)
@@ -75,9 +77,9 @@ for traindirs, testdirs in fold_iterator:
     logger.info('############ FOLD #############')
     logger.info('Training folders are {}'.format(traindirs))
     training_generator = DataLoader(
-        data_dir, traindirs, 32, width_template=params_dict['width'])
+        data_dir, traindirs, 16, width_template=params_dict['width'])
     validation_generator = DataLoader(
-        data_dir, testdirs, 32, width_template=params_dict['width'], type='val')
+        data_dir, testdirs, 16, width_template=params_dict['width'], type='val')
 
     # Design model
     model = create_model(params_dict['width']+1,
@@ -108,7 +110,11 @@ for traindirs, testdirs in fold_iterator:
     # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
     curr_fold_dist = []
     curr_fold_pix = []
-    for k,testfolder in enumerate(testdirs):
+    for k, testfolder in enumerate(testdirs):
+        res_x = DataLoader.resolution_df.loc[DataLoader.resolution_df['scan']
+                                             == subfolder, 'res_x'].values[0]
+        res_y = DataLoader.resolution_df.loc[DataLoader.resolution_df['scan']
+                                             == subfolder, 'res_y'].values[0]
         annotation_dir = os.path.join(data_dir, testfolder, 'Annotation')
         img_dir = os.path.join(data_dir, testfolder, 'Data')
         list_imgs = [os.path.join(img_dir, dI)
@@ -123,9 +129,15 @@ for traindirs, testdirs in fold_iterator:
         list_label_files.sort()
         print(list_label_files)
         img_init = np.asarray(Image.open(list_imgs[0]))
+        img_init = imresize(
+            img_init, (int(np.floor(img_init.shape[0]*res_x/0.27)),
+                       int(np.floor(img_init.shape[1]*res_y/0.27))), 'bilinear')
         img_init = img_init/255.0
-        for j,label_file in enumerate(list_label_files):
+        for j, label_file in enumerate(list_label_files):
             img_current = np.asarray(Image.open(list_imgs[0]))
+            img_current = imresize(
+                img_current, (int(np.floor(img_current.shape[0]*res_x/0.27)),
+                              int(np.floor(img_current.shape[1]*res_y/0.27))), 'bilinear')
             img_current = img_current/255.0
             df = pd.read_csv(label_file,
                              header=None,
@@ -146,13 +158,16 @@ for traindirs, testdirs in fold_iterator:
                 img_prev = img_current
                 # modify like in DataLoader
                 img_current = np.asarray(Image.open(list_imgs[i]))
+                img_current = imresize(
+                    img_current, (int(np.floor(img_current.shape[0]*res_x/0.27)),
+                                  int(np.floor(img_current.shape[1]*res_y/0.27))), 'bilinear')
                 img_current = img_current/255.0
                 c1, c2, maxNCC = global_template_search(c1,
                                                         c2,
                                                         img_prev,
                                                         img_current,
                                                         width=params_dict['width'],
-                                                        search_w = params_dict['search_w'])
+                                                        search_w=params_dict['search_w'])
                 xax, yax = find_template_pixel(c1, c2,
                                                width=params_dict['width'])
                 template_current = img_current[np.ravel(
@@ -193,8 +208,7 @@ for traindirs, testdirs in fold_iterator:
             absolute_diff = np.mean(np.abs(df_preds-df_true))
             pix_dist = np.mean(
                 np.sqrt((df_preds[:, 0]-df_true[:, 0])**2+(df_preds[:, 1]-df_true[:, 1])**2))
-            dist = compute_euclidean_distance(
-                kf.resolution_df, testfolder, df_preds, df_true)
+            dist = compute_euclidean_distance(df_preds, df_true)
             curr_fold_dist.append(dist)
             curr_fold_pix.append(pix_dist)
             logger.info('======== Test Feature {} ======='.format(label_file))
@@ -203,10 +217,11 @@ for traindirs, testdirs in fold_iterator:
             logger.info(
                 'Mean absolute difference in pixels {}'.format(absolute_diff))
             np.save(os.path.join(checkpoint_dir,
-                                 'list_preds_{}_fold{}'.format(j,k)), df_preds)
+                                 'list_preds_{}_fold{}'.format(j, k)), df_preds)
             np.save(os.path.join(checkpoint_dir,
-                                 'list_true_{}_fold{}'.format(j,k)), df_true)
-            np.save(os.path.join(checkpoint_dir, 'list_full_center_{}_{}'.format(j,k)), list_centers)
+                                 'list_true_{}_fold{}'.format(j, k)), df_true)
+            np.save(os.path.join(checkpoint_dir,
+                                 'list_full_center_{}_{}'.format(j, k)), list_centers)
     eucl_dist_per_fold = np.append(eucl_dist_per_fold, np.mean(curr_fold_dist))
     pixel_dist_per_fold = np.append(
         pixel_dist_per_fold, np.mean(curr_fold_pix))
