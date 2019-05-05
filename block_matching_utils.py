@@ -40,6 +40,10 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
         denom = np.sqrt(np.sum(x1**2)*np.sum(x2**2))
         if denom == 0:
             return 0
+        elif np.percentile(x2, 0.4) == 0:
+            # if 40% is black it means you are on the border
+            # i.e. bad choice
+            return 0
         else:
             return num/denom
     except IndexError:
