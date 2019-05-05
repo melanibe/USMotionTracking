@@ -53,7 +53,10 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
 def NCC_best_template_search(c1, c2, im1, im2, width=60, c1_init=None, c2_init=None, search_w = 100):
     ''' Finds the best center according to block matching search
     '''
+    print(c1,c2)
     searchx, searchy = find_search_pixel(c1, c2, search_w)
+    print(np.min(c1), np.max(c1))
+    print(np.min(c2), np.max(c2))
     if c1_init is None:
         xv, yv = find_template_pixel(c1, c2, width)
     else:
