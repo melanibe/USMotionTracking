@@ -234,7 +234,7 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
             xax)].reshape(1, len(yax), len(xax))
         pred_df = predict_feature(c1_init, c2_init, img_init, len(
             list_imgs), img_dir, res_x, res_y, model, template_init, params_dict)
-        pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
+        pred_df.to_csv(os.path.join(checkpoint_dir, '{}'.format(
             label_file)), header=False, index=False)
         print('{} DONE, {}/{}'.format(label_file, j, len(list_label_files)))
 
@@ -272,9 +272,9 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new_exp_80_25_128_se60'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 60}
+    exp_name = 'new_exp_80_10_128_80'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
+                   'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 80}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
