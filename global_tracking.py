@@ -16,7 +16,7 @@ CLUST Challenge
 '''
 
 def get_next_center(c1_prev, c2_prev, img_prev, img_current,
-                    params_dict, model, template_init):
+                    params_dict, model, template_init, logger=None):
     c1, c2, maxNCC = NCC_best_template_search(c1_prev,
                                             c2_prev,
                                             img_prev,
@@ -32,9 +32,19 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
         x=[template_current, template_init, current_centers])
     old_c1, old_c2 = c1, c2
     c1, c2 = pred[0, 0], pred[0, 1]
-    if np.sqrt((old_c1-c1)**2+(old_c2-c2)**2) > 10:
-        logger.info('WARN: weird prediction mean both maxNCC pred')
-        c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
+    if np.sqrt((old_c1-c1)**2+(old_c2-c2)**2) > 15:
+        if np.sqrt((c1_prev-c1)**2+(c1_prev-c2)**2) > 15:
+            if logger is None:
+                print('WARN: VERY weird prediction mean maxNCC old_pred')
+            else:
+                logger.info('WARN: VERY weird prediction mean both maxNCC old_pred')
+            c1, c2 = (old_c1+c1_prev)/2, (old_c2+c2_prev)/2
+        else:
+            if logger is None:
+                print('WARN: weird prediction mean both maxNCC current_pred')
+            else:
+                logger.info('WARN: weird prediction mean both maxNCC current_pred')
+            c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
     return c1, c2, maxNCC
 
 
@@ -136,7 +146,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                             os.path.join(img_dir, "{:05d}.png".format(i))))
                     img_current = prepare_input_img(img_current, res_x, res_y)
                     c1, c2, maxNCC = get_next_center(
-                        c1, c2, img_prev, img_current, params_dict, model, template_init)
+                        c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
                     # project back in init coords
                     c1_orig_coords = c1*0.27/res_x
                     c2_orig_coords = c2*0.27/res_y
@@ -192,10 +202,10 @@ def run_global_cv(fold_iterator, logger, params_dict):
             eucl_dist_per_fold[-1]))
         logger.info('PIXEL DISTANCE CURRENT FOLD {}'.format(
             pixel_dist_per_fold[-1]))
-        logger.info('================= END RESULTS =================')
-        logger.info('Mean euclidean distance in mm {} (std {})'
-                    .format(np.mean(eucl_dist_per_fold),
-                            np.std(eucl_dist_per_fold)))
+    logger.info('================= END RESULTS =================')
+    logger.info('Mean euclidean distance in mm {} (std {})'
+                .format(np.mean(eucl_dist_per_fold),
+                        np.std(eucl_dist_per_fold)))
 
 
 def predict_testfolder(testfolder, data_dir, res_x, res_y,
@@ -224,10 +234,8 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
                          header=None,
                          names=['id', 'x', 'y'],
                          sep='\s+')
-        df['x_newres'] = df['x']*res_x/0.27
-        df['y_newres'] = df['y']*res_y/0.27
         c1_init, c2_init = df.loc[df['id'] == 1, [
-            'x_newres', 'y_newres']].values[0, :]
+            'x', 'y']].values[0, :]
         xax, yax = find_template_pixel(c1_init*res_x/0.27, c2_init*res_y*0.27,
                                        width=params_dict['width'])
         template_init = img_init[np.ravel(yax), np.ravel(
@@ -246,7 +254,7 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
     c1 = c1_init*res_x/0.27
     c2 = c2_init*res_y/0.27
     for i in range(2, n_obs):
-        if i % 100 == 0:
+        if i % 50 == 0:
             print(i)
         img_prev = img_current
         try:
@@ -272,9 +280,9 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new_exp_80_10_128_80'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
-                   'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 80}
+    exp_name = 'new_exp_60_10_128_60'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
+                   'h3': 0, 'embed_size': 128, 'width': 60, 'search_w': 60}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
