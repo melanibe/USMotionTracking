@@ -22,7 +22,7 @@ CUDA_HOME=/scratch_net/biwidl202/melanibe/apps/cuda-9.0
 ##$ -j y
 #
 # logging directory, preferably on your scratch
-#$ -o /scratch_net/biwidl202/melanibe/logs
+##$ -o /scratch_net/biwidl202/melanibe/logs
 #
 
 
