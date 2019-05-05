@@ -33,10 +33,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
     old_c1, old_c2 = c1, c2
     c1, c2 = pred[0, 0], pred[0, 1]
     if np.sqrt((old_c1-c1)**2+(old_c2-c2)**2) > 15:
-        print(old_c1, old_c2)
-        print(c1_prev, c2_prev)
-        print(c1, c2)
-        if np.sqrt((c1_prev-c1)**2+(c1_prev-c2)**2) > 10:
+        if np.sqrt((c1_prev-c1)**2+(c1_prev-c2)**2) > 15:
             if logger is None:
                 print('WARN: VERY weird prediction mean maxNCC old_pred')
             else:
@@ -257,7 +254,7 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
     c1 = c1_init*res_x/0.27
     c2 = c2_init*res_y/0.27
     for i in range(2, n_obs):
-        if i % 100 == 0:
+        if i % 50 == 0:
             print(i)
         img_prev = img_current
         try:
