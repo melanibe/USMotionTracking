@@ -9,6 +9,7 @@ import pandas as pd
 from tensorflow import keras
 from utils import get_logger, get_default_params
 import skimage
+import tensorflow as tf
 
 '''
 Mélanie Bernhardt - ETH Zurich
@@ -38,12 +39,20 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 print('WARN: VERY weird prediction mean maxNCC old_pred')
             else:
                 logger.info('WARN: VERY weird prediction mean both maxNCC old_pred')
+                logger.info('previous {},{}'.format(c1_prev, c2_prev))
+                logger.info('NCC {},{}'.format(old_c1, old_c2))
+                logger.info('proposed by net {},{}'.format(c1, c2))
+                logger.info('kept {},{}'.format((old_c1+c1_prev)/2, (old_c2+c2_prev)/2))
             c1, c2 = (old_c1+c1_prev)/2, (old_c2+c2_prev)/2
         else:
             if logger is None:
                 print('WARN: weird prediction mean both maxNCC current_pred')
             else:
                 logger.info('WARN: weird prediction mean both maxNCC current_pred')
+                logger.info('previous {},{}'.format(c1_prev, c2_prev))
+                logger.info('NCC {},{}'.format(old_c1, old_c2))
+                logger.info('proposed by net {},{}'.format(c1, c2))
+                logger.info('kept {},{}'.format((old_c1+c1)/2, (old_c2+c2)/2))
             c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
     return c1, c2, maxNCC
 
@@ -88,7 +97,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                                 validation_data=validation_generator,
                                 use_multiprocessing=True,
                                 epochs=params_dict['n_epochs'],
-                                workers=6)
+                                workers=2, max_queue_size=10)
             model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
 
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
@@ -134,7 +143,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                 template_init = img_init[np.ravel(yax), np.ravel(
                     xax)].reshape(1, len(yax), len(xax))
                 c1, c2 = c1_init, c2_init
-                for i in range(2, len(list_imgs)):
+                for i in range(2, len(list_imgs)+1):
                     if i % 100 == 0:
                         print(i)
                     img_prev = img_current
@@ -156,24 +165,18 @@ def run_global_cv(fold_iterator, logger, params_dict):
                         true = df.loc[df['id'] == i, ['x', 'y']].values[0]
                         diff_x = np.abs(c1_orig_coords-true[0])
                         diff_y = np.abs(c2_orig_coords-true[1])
-                        dist = np.sqrt(diff_x**2+diff_y**2)
-                        print('ID {} : euclidean dist diff {}'
+                        dist = np.sqrt(diff_x**2+diff_y**2)                        
+                        logger.info('ID {} : euclidean dist diff {}'
                               .format(i, dist*0.27))
-                        print('ID {} : pixel dist diff {}'.format(i, dist))
+                        logger.info('ID {} : pixel dist diff {}'.format(i, dist))
                         if dist > 3:
-                            print('Bad dist - maxNCC was {}'.format(maxNCC))
+                            logger.info('Bad dist - maxNCC was {}'.format(maxNCC))
+                            logger.info('True {},{}'.format(true[0], true[1]))
+                            logger.info('Pred {},{}'.format(c1_orig_coords, c2_orig_coords))
                 idx = df.id.values.astype(int)
-                idx = np.delete(idx, 0)
                 list_centers = list_centers.reshape(-1, 2)
                 df_preds = list_centers[idx-1]
                 df_true = df[['x', 'y']].values
-                try:
-                    assert len(idx) == len(df_true)
-                except AssertionError:
-                    print(label_file)
-                    print(len(idx))
-                    print(len(df_true))
-                df_true = np.delete(df_true, 0, 0)
                 absolute_diff = np.mean(np.abs(df_preds-df_true))
                 pix_dist = np.mean(
                     np.sqrt((df_preds[:, 0]-df_true[:, 0]) ** 2 +
@@ -189,7 +192,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                     'Mean absolute difference in pixels {}'
                     .format(absolute_diff))
                 pred_df = pd.DataFrame()
-                pred_df['idx'] = range(len(list_centers))
+                pred_df['idx'] = range(1,len(list_centers)+1)
                 pred_df['c1'] = list_centers[:, 0]
                 pred_df['c2'] = list_centers[:, 1]
                 pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
@@ -280,9 +283,9 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new_exp_60_10_128_60'
+    exp_name = 'new_exp_80_25_128_80'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 128, 'width': 60, 'search_w': 60}
+                   'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 80}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
@@ -307,5 +310,8 @@ if __name__ == '__main__':
     # KFold iterator
     kf = MyKFold(data_dir, n_splits=5)
     fold_iterator = kf.getFolderIterator()
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.666)
 
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+    tf.keras.backend.set_session(sess)
     run_global_cv(fold_iterator, logger, params_dict)

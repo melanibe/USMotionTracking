@@ -41,8 +41,8 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
     try:
         x1 = np.ravel(im1[np.ravel(yv), np.ravel(xv)])
         x2 = np.ravel(im2[np.ravel(tmp_y), np.ravel(tmp_x)])
-        if np.percentile(x2, 0.6) == 0:
-            # if 60% is black it means you are on the border
+        if np.percentile(x2, 50) == 0:
+            # if 80% is black it means you are probably on the border
             # i.e. bad choice
             return 0
         x1 = x1 - np.mean(x1)
