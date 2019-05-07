@@ -283,9 +283,9 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new_exp_80_25_128_80'
+    exp_name = 'new3_exp_80_25_128_80'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 80}
+                   'h3': 0, 'embed_size': 128, 'width': 150, 'search_w': 80}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
