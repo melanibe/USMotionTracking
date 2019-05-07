@@ -133,8 +133,8 @@ def run_global_cv(fold_iterator, logger, params_dict):
                                  header=None,
                                  names=['id', 'x', 'y'],
                                  sep='\s+')
-                df['x_newres'] = df['x']*res_x/0.27
-                df['y_newres'] = df['y']*res_y/0.27
+                df['x_newres'] = df['x']*res_x/0.4
+                df['y_newres'] = df['y']*res_y/0.4
                 c1_init, c2_init = df.loc[df['id'] == 1, [
                     'x_newres', 'y_newres']].values[0, :]
                 list_centers = [[c1_init*0.27/res_x, c2_init*0.27/res_y]]
@@ -157,8 +157,8 @@ def run_global_cv(fold_iterator, logger, params_dict):
                     c1, c2, maxNCC = get_next_center(
                         c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
                     # project back in init coords
-                    c1_orig_coords = c1*0.27/res_x
-                    c2_orig_coords = c2*0.27/res_y
+                    c1_orig_coords = c1*0.4/res_x
+                    c2_orig_coords = c2*0.4/res_y
                     list_centers = np.append(
                         list_centers, [c1_orig_coords, c2_orig_coords])
                     if i in df.id.values:
@@ -239,7 +239,7 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
                          sep='\s+')
         c1_init, c2_init = df.loc[df['id'] == 1, [
             'x', 'y']].values[0, :]
-        xax, yax = find_template_pixel(c1_init*res_x/0.27, c2_init*res_y*0.27,
+        xax, yax = find_template_pixel(c1_init*res_x/0.4, c2_init*res_y*0.4,
                                        width=params_dict['width'])
         template_init = img_init[np.ravel(yax), np.ravel(
             xax)].reshape(1, len(yax), len(xax))
@@ -254,8 +254,8 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
                     img_dir, res_x, res_y, model, template_init, params_dict):
     img_current = img_init
     list_centers = [[c1_init, c2_init]]
-    c1 = c1_init*res_x/0.27
-    c2 = c2_init*res_y/0.27
+    c1 = c1_init*res_x/0.4
+    c2 = c2_init*res_y/0.4
     for i in range(2, n_obs):
         if i % 50 == 0:
             print(i)
@@ -270,7 +270,7 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
         c1, c2, maxNCC = get_next_center(
             c1, c2, img_prev, img_current, params_dict, model, template_init)
         # project back in init coords
-        c1_orig_coords, c2_orig_coords = c1*0.27/res_x, c2*0.27/res_y
+        c1_orig_coords, c2_orig_coords = c1*0.4/res_x, c2*0.4/res_y
         list_centers = np.append(
             list_centers, [c1_orig_coords, c2_orig_coords])
         list_centers = list_centers.reshape(-1, 2)
@@ -285,7 +285,7 @@ if __name__ == '__main__':
     np.random.seed(seed=42)
     exp_name = 'new3_exp_80_25_128_80'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 128, 'width': 150, 'search_w': 80}
+                   'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')

@@ -15,8 +15,8 @@ CLUST Challenge
 '''
 
 def metrics_distance(labels, preds):
-    curr_res_x = 0.27
-    curr_res_y = 0.27
+    curr_res_x = 0.4
+    curr_res_y = 0.4
     return tf.reduce_mean(
         tf.sqrt(((preds[:, 0] - labels[:, 0])*curr_res_x)**2 +
                 ((preds[:, 1] - labels[:, 1])*curr_res_y)**2)
@@ -24,8 +24,8 @@ def metrics_distance(labels, preds):
 
 
 def compute_euclidean_distance(preds, labels):
-    curr_res_x = 0.27
-    curr_res_y = 0.27
+    curr_res_x = 0.4
+    curr_res_y = 0.4
     return np.mean(
         np.sqrt(((preds[:, 0] - labels[:, 0])*curr_res_x)**2 +
                 ((preds[:, 1] - labels[:, 1])*curr_res_y)**2)
@@ -90,8 +90,8 @@ class DataLoader(keras.utils.Sequence):
                                  names=['id', 'x', 'y'],
                                  sep='\s+')
                 n_obs = len(df)
-                df['x_newres'] = df['x']*res_x/0.27
-                df['y_newres'] = df['y']*res_y/0.27
+                df['x_newres'] = df['x']*res_x/0.4
+                df['y_newres'] = df['y']*res_y/0.4
                 try:
                     Image.open(os.path.join(self.data_dir,
                                             subfolder, 'Data', "0001.png"))
@@ -125,8 +125,8 @@ class DataLoader(keras.utils.Sequence):
                 self.orig_labels_y = np.append(
                     self.orig_labels_y, df.y_newres.values[1:n_obs])
         self.shuffle = shuffle
-        self.u_x_list = np.random.randn(len(self.orig_labels_x))*10
-        self.u_y_list = np.random.randn(len(self.orig_labels_y))*10
+        self.u_x_list = np.random.randn(len(self.orig_labels_x))*5
+        self.u_y_list = np.random.randn(len(self.orig_labels_y))*5
         if self.type == 'val':
             self.shuffle = False  # don't shuffle if test set.
         self.on_epoch_end()
