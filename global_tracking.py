@@ -33,7 +33,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
         x=[template_current, template_init, current_centers])
     old_c1, old_c2 = c1, c2
     c1, c2 = pred[0, 0], pred[0, 1]
-    if np.sqrt((c1_prev-c1)**2+(c1_prev-c2)**2) > 15:
+    if np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 15:
         if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < np.sqrt((old_c1-c1)**2+(old_c2-c2)**2):
             if logger is None:
                 print('WARN: VERY weird prediction mean maxNCC old_pred')
