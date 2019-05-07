@@ -27,9 +27,16 @@ def find_template_pixel(c1, c2, width=60):
     # all the x,y in the template centered around c1, c2
     return np.meshgrid(xax, yax)
 
+
 def get_NCC(i, j, im1, im2, width, yv, xv):
     '''Returns the NCC between 2 images
     '''
+    a, b = np.nonzero(im1)
+    # detect the edges
+    if ((b[np.where(a == j)][0] > i)
+            or (b[np.where(a == j)][-1] < i)):
+        print('proposed center outside image')
+        return 0
     tmp_x, tmp_y = find_template_pixel(i, j, width)
     try:
         x1 = np.ravel(im1[np.ravel(yv), np.ravel(xv)])
@@ -48,9 +55,10 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
             return num/denom
     except IndexError:
         raise
-        return 0  
+        return 0
 
-def NCC_best_template_search(c1, c2, im1, im2, width=60, c1_init=None, c2_init=None, search_w = 100):
+
+def NCC_best_template_search(c1, c2, im1, im2, width=60, c1_init=None, c2_init=None, search_w=100):
     ''' Finds the best center according to block matching search
     '''
     searchx, searchy = find_search_pixel(c1, c2, search_w)
@@ -58,7 +66,8 @@ def NCC_best_template_search(c1, c2, im1, im2, width=60, c1_init=None, c2_init=N
         xv, yv = find_template_pixel(c1, c2, width)
     else:
         xv, yv = find_template_pixel(c1_init, c2_init, width)
-    NCC_all = parmap.starmap(get_NCC, zip(np.ravel(searchx), np.ravel(searchy)), im1, im2, width, yv, xv, pm_parallel=True)
+    NCC_all = parmap.starmap(get_NCC, zip(np.ravel(searchx), np.ravel(
+        searchy)), im1, im2, width, yv, xv, pm_parallel=True)
     maxNCC = np.max(NCC_all)
     if maxNCC == 0:
         print('VERY WEIRD ALL NCC ARE 0')
