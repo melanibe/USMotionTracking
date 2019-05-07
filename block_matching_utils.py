@@ -36,7 +36,7 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
     if ((b[np.where(a == j)][0] > i)
             or (b[np.where(a == j)][-1] < i)):
         print('proposed center outside image')
-        return 0
+        return -1
     tmp_x, tmp_y = find_template_pixel(i, j, width)
     try:
         x1 = np.ravel(im1[np.ravel(yv), np.ravel(xv)])
@@ -44,18 +44,18 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
         if np.percentile(x2, 50) == 0:
             # if 80% is black it means you are probably on the border
             # i.e. bad choice
-            return 0
+            return -1
         x1 = x1 - np.mean(x1)
         x2 = x2 - np.mean(x2)
         num = np.sum(x1*x2)
         denom = np.sqrt(np.sum(x1**2)*np.sum(x2**2))
         if denom == 0:
-            return 0
+            return -1
         else:
             return num/denom
     except IndexError:
         raise
-        return 0
+        return -1
 
 
 def NCC_best_template_search(c1, c2, im1, im2, width=60, c1_init=None, c2_init=None, search_w=100):
