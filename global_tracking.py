@@ -137,7 +137,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                 df['y_newres'] = df['y']*res_y/0.4
                 c1_init, c2_init = df.loc[df['id'] == 1, [
                     'x_newres', 'y_newres']].values[0, :]
-                list_centers = [[c1_init*0.27/res_x, c2_init*0.27/res_y]]
+                list_centers = [[c1_init*0.4/res_x, c2_init*0.4/res_y]]
                 xax, yax = find_template_pixel(c1_init, c2_init,
                                                width=params_dict['width'])
                 template_init = img_init[np.ravel(yax), np.ravel(
@@ -167,7 +167,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                         diff_y = np.abs(c2_orig_coords-true[1])
                         dist = np.sqrt(diff_x**2+diff_y**2)                        
                         logger.info('ID {} : euclidean dist diff {}'
-                              .format(i, dist*0.27))
+                              .format(i, dist*0.4))
                         logger.info('ID {} : pixel dist diff {}'.format(i, dist))
                         if dist > 3:
                             logger.info('Bad dist - maxNCC was {}'.format(maxNCC))
