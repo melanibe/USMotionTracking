@@ -54,7 +54,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 logger.info('proposed by net {},{}'.format(c1, c2))
                 logger.info('kept {},{}'.format((old_c1+c1)/2, (old_c2+c2)/2))
             c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
-    return c1, c2, maxNCC
+    return c1, c2, old_c1, old_c2, maxNCC
 
 
 def run_global_cv(fold_iterator, logger, params_dict):
@@ -128,6 +128,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                     os.path.join(img_dir, "{:05d}.png".format(1))))
             img_init = prepare_input_img(img_init, res_x, res_y)
             for j, label_file in enumerate(list_label_files):
+                print(label_file)
                 img_current = img_init
                 df = pd.read_csv(os.path.join(annotation_dir, label_file),
                                  header=None,
@@ -154,7 +155,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                         img_current = np.asarray(Image.open(
                             os.path.join(img_dir, "{:05d}.png".format(i))))
                     img_current = prepare_input_img(img_current, res_x, res_y)
-                    c1, c2, maxNCC = get_next_center(
+                    c1, c2, old_c1, old_c2, maxNCC = get_next_center(
                         c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
                     # project back in init coords
                     c1_orig_coords = c1*0.4/res_x
@@ -173,6 +174,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                             logger.info('Bad dist - maxNCC was {}'.format(maxNCC))
                             logger.info('True {},{}'.format(true[0], true[1]))
                             logger.info('Pred {},{}'.format(c1_orig_coords, c2_orig_coords))
+                            logger.info('NCC {},{}'.format(old_c1*0.4/res_x, old_c2*0.4/res_y))
                 idx = df.id.values.astype(int)
                 list_centers = list_centers.reshape(-1, 2)
                 df_preds = list_centers[idx-1]
@@ -283,9 +285,9 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new3_exp_80_25_128_80'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 128, 'width': 80, 'search_w': 50}
+    exp_name = 'new3_exp_80_150_128_50'
+    params_dict = {'dropout_rate': 0.4, 'n_epochs': 150,
+                   'h3': 32, 'embed_size': 512, 'width': 80, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')

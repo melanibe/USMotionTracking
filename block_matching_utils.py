@@ -33,18 +33,19 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
     '''
     a, b = np.nonzero(im1)
     # detect the edges
-    if ((b[np.where(a == j)][0] > i)
-            or (b[np.where(a == j)][-1] < i)):
-        print('proposed center outside image')
+    try:
+        if ((b[np.where(a == j)][0] > i)
+                or (b[np.where(a == j)][-1] < i)):
+            #print('proposed center outside image')
+            #print(i, j)
+            #print(b[np.where(a == j)][0], b[np.where(a == j)][-1])
+            return -1
+    except IndexError:
         return -1
     tmp_x, tmp_y = find_template_pixel(i, j, width)
     try:
         x1 = np.ravel(im1[np.ravel(yv), np.ravel(xv)])
         x2 = np.ravel(im2[np.ravel(tmp_y), np.ravel(tmp_x)])
-        if np.percentile(x2, 50) == 0:
-            # if 80% is black it means you are probably on the border
-            # i.e. bad choice
-            return -1
         x1 = x1 - np.mean(x1)
         x2 = x2 - np.mean(x2)
         num = np.sum(x1*x2)
@@ -69,8 +70,10 @@ def NCC_best_template_search(c1, c2, im1, im2, width=60, c1_init=None, c2_init=N
     NCC_all = parmap.starmap(get_NCC, zip(np.ravel(searchx), np.ravel(
         searchy)), im1, im2, width, yv, xv, pm_parallel=True)
     maxNCC = np.max(NCC_all)
-    if maxNCC == 0:
-        print('VERY WEIRD ALL NCC ARE 0')
+    if np.sum(NCC_all == -1) > 0:
+        print('Number of weird NCC {}'.format(np.sum(NCC_all == -1)))
+    if maxNCC == -1:
+        print('VERY WEIRD ALL NCC ARE -1')
     idx = np.argmax(NCC_all)
     best_c1, best_c2 = np.ravel(searchx)[idx], np.ravel(searchy)[idx]
     return best_c1, best_c2, maxNCC
