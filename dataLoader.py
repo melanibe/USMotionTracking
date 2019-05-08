@@ -34,8 +34,8 @@ def compute_euclidean_distance(preds, labels):
 
 def prepare_input_img(img, res_x, res_y):
     img = skimage.transform.resize(
-        img, (int(np.floor(img.shape[0]*res_y/0.27)),
-              int(np.floor(img.shape[1]*res_x/0.27))))
+        img, (int(np.floor(img.shape[0]*res_y/0.4)),
+              int(np.floor(img.shape[1]*res_x/0.4))))
     img = img/255.0
     return img
 
