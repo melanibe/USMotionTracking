@@ -97,7 +97,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                                 validation_data=validation_generator,
                                 use_multiprocessing=True,
                                 epochs=params_dict['n_epochs'],
-                                workers=4, max_queue_size=20)
+                                workers=4, max_queue_size=20, steps_per_epoch=100)
             model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
 
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
@@ -290,9 +290,9 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new_exp_80_10_256_50'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
-                   'h3': 0, 'embed_size': 128, 'width': 100, 'search_w': 50}
+    exp_name = 'new1'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
+                   'h3': 128, 'embed_size': 256, 'width': 80, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
