@@ -25,7 +25,7 @@ def find_template_pixel(c1, c2, width, max_x, max_y):
     if c1-1-w<0:
         xax = np.arange(0, w+w+2, step=1)
     elif c1+w > max_x:
-        xax = np.arange(max_x-w+w+2, max_x, step=1)
+        xax = np.arange(max_x-(w+w+2), max_x, step=1)
     else:
         xax = np.arange(int(c1-1)-w, int(c1-1)+w+1, step=1)
     if c2-1-w<0:
