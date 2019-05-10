@@ -31,11 +31,13 @@ def find_template_pixel(c1, c2, width=60):
 def get_NCC(i, j, im1, im2, width, yv, xv):
     '''Returns the NCC between 2 images
     '''
-    a, b = np.nonzero(im1)
+    a, b = np.nonzero(im1[:, 20:(len(im1)-20)])
+    lim_left = b[np.where(a == np.floor(j))][0]+20
+    lim_right = b[np.where(a == np.floor(j))][-1]+20
     # detect the edges
     try:
-        if ((b[np.where(a == j)][0] > i)
-                or (b[np.where(a == j)][-1] < i)):
+        if ((lim_left > i)
+                or (lim_right < i)):
             #print('proposed center outside image')
             #print(i, j)
             #print(b[np.where(a == j)][0], b[np.where(a == j)][-1])
@@ -55,7 +57,6 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
         else:
             return num/denom
     except IndexError:
-        raise
         return -1
 
 

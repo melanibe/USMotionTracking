@@ -97,7 +97,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                                 validation_data=validation_generator,
                                 use_multiprocessing=True,
                                 epochs=params_dict['n_epochs'],
-                                workers=2, max_queue_size=10)
+                                workers=4, max_queue_size=20)
             model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
 
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
@@ -138,6 +138,11 @@ def run_global_cv(fold_iterator, logger, params_dict):
                 df['y_newres'] = df['y']*res_y/0.4
                 c1_init, c2_init = df.loc[df['id'] == 1, [
                     'x_newres', 'y_newres']].values[0, :]
+                a, b = np.nonzero(img_init[:, 20:(len(img_init)-20)])
+                print(c1_init, c2_init)
+                print(img_init.shape)
+                logger.info(b[np.where(a == np.floor(c2_init))][0]+20)
+                logger.info(b[np.where(a == np.floor(c2_init))][-1]+20)
                 list_centers = [[c1_init*0.4/res_x, c2_init*0.4/res_y]]
                 xax, yax = find_template_pixel(c1_init, c2_init,
                                                width=params_dict['width'])
@@ -169,8 +174,8 @@ def run_global_cv(fold_iterator, logger, params_dict):
                         dist = np.sqrt(diff_x**2+diff_y**2)                        
                         logger.info('ID {} : euclidean dist diff {}'
                               .format(i, dist*0.4))
-                        logger.info('ID {} : pixel dist diff {}'.format(i, dist))
-                        if dist > 3:
+                        #logger.info('ID {} : pixel dist diff {}'.format(i, dist))
+                        if dist > 10:
                             logger.info('Bad dist - maxNCC was {}'.format(maxNCC))
                             logger.info('True {},{}'.format(true[0], true[1]))
                             logger.info('Pred {},{}'.format(c1_orig_coords, c2_orig_coords))
@@ -285,9 +290,9 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new3_exp_80_150_128_50'
-    params_dict = {'dropout_rate': 0.4, 'n_epochs': 150,
-                   'h3': 32, 'embed_size': 512, 'width': 80, 'search_w': 50}
+    exp_name = 'new_exp_80_10_256_50'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
+                   'h3': 0, 'embed_size': 128, 'width': 100, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
