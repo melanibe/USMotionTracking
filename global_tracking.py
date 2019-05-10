@@ -8,22 +8,22 @@ from PIL import Image
 import pandas as pd
 from tensorflow import keras
 from utils import get_logger, get_default_params
-import skimage
 import tensorflow as tf
-
+import parmap
 '''
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
 '''
 
+
 def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                     params_dict, model, template_init, logger=None):
     c1, c2, maxNCC = NCC_best_template_search(c1_prev,
-                                            c2_prev,
-                                            img_prev,
-                                            img_current,
-                                            width=params_dict['width'],
-                                            search_w=params_dict['search_w'])
+                                              c2_prev,
+                                              img_prev,
+                                              img_current,
+                                              width=params_dict['width'],
+                                              search_w=params_dict['search_w'])
     xax, yax = find_template_pixel(c1, c2,
                                    width=params_dict['width'])
     template_current = img_current[np.ravel(
@@ -38,17 +38,20 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
             if logger is None:
                 print('WARN: VERY weird prediction mean maxNCC old_pred')
             else:
-                logger.info('WARN: VERY weird prediction mean both maxNCC old_pred')
+                logger.info(
+                    'WARN: VERY weird prediction mean both maxNCC old_pred')
                 logger.info('previous {},{}'.format(c1_prev, c2_prev))
                 logger.info('NCC {},{}'.format(old_c1, old_c2))
                 logger.info('proposed by net {},{}'.format(c1, c2))
-                logger.info('kept {},{}'.format((old_c1+c1_prev)/2, (old_c2+c2_prev)/2))
+                logger.info('kept {},{}'.format(
+                    (old_c1+c1_prev)/2, (old_c2+c2_prev)/2))
             c1, c2 = (old_c1+c1_prev)/2, (old_c2+c2_prev)/2
         else:
             if logger is None:
                 print('WARN: weird prediction mean both maxNCC current_pred')
             else:
-                logger.info('WARN: weird prediction mean both maxNCC current_pred')
+                logger.info(
+                    'WARN: weird prediction mean both maxNCC current_pred')
                 logger.info('previous {},{}'.format(c1_prev, c2_prev))
                 logger.info('NCC {},{}'.format(old_c1, old_c2))
                 logger.info('proposed by net {},{}'.format(c1, c2))
@@ -127,6 +130,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                 img_init = np.asarray(Image.open(
                     os.path.join(img_dir, "{:05d}.png".format(1))))
             img_init = prepare_input_img(img_init, res_x, res_y)
+
             for j, label_file in enumerate(list_label_files):
                 print(label_file)
                 img_current = img_init
@@ -139,10 +143,6 @@ def run_global_cv(fold_iterator, logger, params_dict):
                 c1_init, c2_init = df.loc[df['id'] == 1, [
                     'x_newres', 'y_newres']].values[0, :]
                 a, b = np.nonzero(img_init[:, 20:(len(img_init)-20)])
-                print(c1_init, c2_init)
-                print(img_init.shape)
-                logger.info(b[np.where(a == np.floor(c2_init))][0]+20)
-                logger.info(b[np.where(a == np.floor(c2_init))][-1]+20)
                 list_centers = [[c1_init*0.4/res_x, c2_init*0.4/res_y]]
                 xax, yax = find_template_pixel(c1_init, c2_init,
                                                width=params_dict['width'])
@@ -171,15 +171,17 @@ def run_global_cv(fold_iterator, logger, params_dict):
                         true = df.loc[df['id'] == i, ['x', 'y']].values[0]
                         diff_x = np.abs(c1_orig_coords-true[0])
                         diff_y = np.abs(c2_orig_coords-true[1])
-                        dist = np.sqrt(diff_x**2+diff_y**2)                        
+                        dist = np.sqrt(diff_x**2+diff_y**2)
                         logger.info('ID {} : euclidean dist diff {}'
-                              .format(i, dist*0.4))
-                        #logger.info('ID {} : pixel dist diff {}'.format(i, dist))
+                                    .format(i, dist*0.4))
                         if dist > 10:
-                            logger.info('Bad dist - maxNCC was {}'.format(maxNCC))
+                            logger.info(
+                                'Bad dist - maxNCC was {}'.format(maxNCC))
                             logger.info('True {},{}'.format(true[0], true[1]))
-                            logger.info('Pred {},{}'.format(c1_orig_coords, c2_orig_coords))
-                            logger.info('NCC {},{}'.format(old_c1*0.4/res_x, old_c2*0.4/res_y))
+                            logger.info('Pred {},{}'.format(
+                                c1_orig_coords, c2_orig_coords))
+                            logger.info('NCC {},{}'.format(
+                                old_c1*0.4/res_x, old_c2*0.4/res_y))
                 idx = df.id.values.astype(int)
                 list_centers = list_centers.reshape(-1, 2)
                 df_preds = list_centers[idx-1]
@@ -199,7 +201,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
                     'Mean absolute difference in pixels {}'
                     .format(absolute_diff))
                 pred_df = pd.DataFrame()
-                pred_df['idx'] = range(1,len(list_centers)+1)
+                pred_df['idx'] = range(1, len(list_centers)+1)
                 pred_df['c1'] = list_centers[:, 0]
                 pred_df['c2'] = list_centers[:, 1]
                 pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
@@ -222,10 +224,6 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
                        model, params_dict):
     annotation_dir = os.path.join(data_dir, testfolder, 'Annotation')
     img_dir = os.path.join(data_dir, testfolder, 'Data')
-    list_imgs = [os.path.join(img_dir, dI)
-                 for dI in os.listdir(img_dir)
-                 if (dI.endswith('png')
-                     and not dI.startswith('.'))]
 
     list_label_files = [dI for dI
                         in os.listdir(annotation_dir)
@@ -239,26 +237,26 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
         img_init = np.asarray(Image.open(
             os.path.join(img_dir, "{:05d}.png".format(1))))
         img_init = prepare_input_img(img_init, res_x, res_y)
-    for j, label_file in enumerate(list_label_files):
-        df = pd.read_csv(os.path.join(annotation_dir, label_file),
-                         header=None,
-                         names=['id', 'x', 'y'],
-                         sep='\s+')
-        c1_init, c2_init = df.loc[df['id'] == 1, [
-            'x', 'y']].values[0, :]
-        xax, yax = find_template_pixel(c1_init*res_x/0.4, c2_init*res_y*0.4,
-                                       width=params_dict['width'])
-        template_init = img_init[np.ravel(yax), np.ravel(
-            xax)].reshape(1, len(yax), len(xax))
-        pred_df = predict_feature(c1_init, c2_init, img_init, len(
-            list_imgs), img_dir, res_x, res_y, model, template_init, params_dict)
-        pred_df.to_csv(os.path.join(checkpoint_dir, '{}'.format(
-            label_file)), header=False, index=False)
-        print('{} DONE, {}/{}'.format(label_file, j, len(list_label_files)))
+    list_preds_df = parmap.starmap(predict_feature,
+                                   enumerate(list_label_files),
+                                   img_init, img_dir,
+                                   res_x, res_y, model,
+                                   annotation_dir, params_dict, checkpoint_dir)
+    return list_preds_df
 
-
-def predict_feature(c1_init, c2_init, img_init, n_obs,
-                    img_dir, res_x, res_y, model, template_init, params_dict):
+def predict_feature(j, label_file, img_init, n_obs,
+                    img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir):
+    df = pd.read_csv(os.path.join(annotation_dir, label_file),
+                     header=None,
+                     names=['id', 'x', 'y'],
+                     sep='\s+')
+    n_obs = len(df.id.values)
+    c1_init, c2_init = df.loc[df['id'] == 1, [
+        'x', 'y']].values[0, :]
+    xax, yax = find_template_pixel(c1_init*res_x/0.4, c2_init*res_y*0.4,
+                                   width=params_dict['width'])
+    template_init = img_init[np.ravel(yax), np.ravel(
+        xax)].reshape(1, len(yax), len(xax))
     img_current = img_init
     list_centers = [[c1_init, c2_init]]
     c1 = c1_init*res_x/0.4
@@ -274,7 +272,7 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
             img_current = np.asarray(Image.open(
                 os.path.join(img_dir, "{:05d}.png".format(i))))
         img_current = prepare_input_img(img_current, res_x, res_y)
-        c1, c2, maxNCC = get_next_center(
+        c1, c2, old_c1, old_c2, maxNCC = get_next_center(
             c1, c2, img_prev, img_current, params_dict, model, template_init)
         # project back in init coords
         c1_orig_coords, c2_orig_coords = c1*0.4/res_x, c2*0.4/res_y
@@ -285,6 +283,9 @@ def predict_feature(c1_init, c2_init, img_init, n_obs,
     pred_df['id'] = np.arange(1, n_obs)
     pred_df['c1'] = list_centers[:, 0]
     pred_df['c2'] = list_centers[:, 1]
+    pred_df.to_csv(os.path.join(checkpoint_dir, '{}'.format(
+        label_file)), header=False, index=False)
+    print('{} DONE'.format(label_file))
     return pred_df
 
 
