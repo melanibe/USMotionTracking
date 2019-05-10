@@ -8,11 +8,41 @@ from tensorflow import keras
 import tensorflow as tf
 import sys
 import skimage
-
+import parmap
 '''
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
 '''
+def return_orig_pairs(idx, df, data_dir, subfolder):
+    init_c1, init_c2 = df.x_newres.values[0], df.y_newres.values[0]
+    try:
+        Image.open(os.path.join(data_dir,
+                                subfolder, 'Data', "0001.png"))
+        img = os.path.join(data_dir, subfolder, 'Data', "{:04d}.png".format(int(idx)))
+        imgs_init = os.path.join(data_dir, subfolder, 'Data', "{:04d}.png".format(int(1)))
+    except FileNotFoundError:
+        img = os.path.join(data_dir, subfolder, 'Data', "{:05d}.png".format(int(idx)))
+        imgs_init = os.path.join(data_dir, subfolder, 'Data', "{:05d}.png".format(int(1)))
+    c1, c2 = df.loc[df['id']==idx, ['x_newres', 'y_newres']].values[0]
+    return c1, c2, init_c1, init_c2, imgs_init, img
+
+
+def return_rdm_pairs(idx, max_j, df, data_dir, subfolder):
+    if max_j==1:
+        j = 0
+    else:
+        j = int(np.random.choice(np.arange(1, max_j)))
+    init_c1, init_c2 = df.x_newres.values[j], df.y_newres.values[j]
+    try:
+        Image.open(os.path.join(data_dir,
+                                subfolder, 'Data', "0001.png"))
+        img = os.path.join(data_dir, subfolder, 'Data', "{:04d}.png".format(int(idx)))
+        imgs_init = os.path.join(data_dir, subfolder, 'Data', "{:04d}.png".format(int(df.id.values[j])))
+    except FileNotFoundError:
+        img = os.path.join(data_dir, subfolder, 'Data', "{:05d}.png".format(int(idx)))
+        imgs_init = os.path.join(data_dir, subfolder, 'Data', "{:05d}.png".format(int(df.id.values[j])))
+    c1, c2 = df.loc[df['id']==idx, ['x_newres', 'y_newres']].values[0]
+    return c1, c2, init_c1, init_c2, imgs_init, img
 
 def metrics_distance(labels, preds):
     curr_res_x = 0.4
@@ -92,38 +122,49 @@ class DataLoader(keras.utils.Sequence):
                 n_obs = len(df)
                 df['x_newres'] = df['x']*res_x/0.4
                 df['y_newres'] = df['y']*res_y/0.4
-                try:
-                    Image.open(os.path.join(self.data_dir,
-                                            subfolder, 'Data', "0001.png"))
-                    self.list_imgs = np.append(self.list_imgs,
-                                               [os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(i)))
-                                                for i in df.id.values[1:n_obs]]
-                                               )
-                    self.list_imgs_init = np.append(self.list_imgs_init,
-                                                    np.repeat(os.path.join(self.data_dir,
-                                                                           subfolder, 'Data', "0001.png"), n_obs-1)
-                                                    )
-                except FileNotFoundError:
-                    self.list_imgs = np.append(self.list_imgs,
-                                               [os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(i)))
-                                                for i in df.id.values[1:n_obs]]
-                                               )
-                    self.list_imgs_init = np.append(self.list_imgs_init,
-                                                    np.repeat(os.path.join(self.data_dir,
-                                                                           subfolder, 'Data',  "00001.png"), n_obs-1)
-                                                    )
+                listid = df.id.values[1:n_obs].astype(int).tolist()
+                big_array = np.asarray(parmap.map(return_orig_pairs, listid, df, self.data_dir, subfolder))
+                other_big_array = np.asarray(parmap.starmap(return_rdm_pairs, zip(listid, range(1, n_obs)), df, self.data_dir, subfolder))
+                #for j, idx in enumerate(df.id.values[2:n_obs], 2):
+                    # orig_init_c1, orig_init_c2 = df.x_newres.values[0], df.y_newres.values[0]
+                    # other_idx = np.random.choice(df.id.values[1:j])
+                    # other_init_c1, other_init_c2 = df.loc[df['id']==other_idx, ['x_newres', 'y_newres']].values[0]
+                    # try:
+                    #     Image.open(os.path.join(self.data_dir,
+                    #                             subfolder, 'Data', "0001.png"))
+                    #     self.list_imgs = np.append(self.list_imgs,
+                    #                             [os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(idx))),
+                    #                             os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(idx)))]
+                    #                             )
+                    #     self.list_imgs_init = np.append(self.list_imgs_init,
+                    #                                     [os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(1))),
+                    #                             os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(other_idx)))]
+                    #                                     )
+                    # except FileNotFoundError:
+                    #     self.list_imgs = np.append(self.list_imgs,
+                    #                             [os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(idx))),
+                    #                             os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(idx)))]
+                    #                             )
+                    #     self.list_imgs_init = np.append(self.list_imgs_init,
+                    #                                     [os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(1))),
+                    #                             os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(other_idx)))]
+                    #                                 )
+                    # self.orig_labels_x = np.append(self.orig_labels_x, np.repeat(df.x_newres.values[j], 2))
+                    # self.orig_labels_y = np.append(self.orig_labels_x, np.repeat(df.y_newres.values[j], 2))
+                    # self.list_init_x = np.append(self.list_init_x, [orig_init_c1, other_init_c1])
+                    # self.list_init_y = np.append(self.list_init_x, [orig_init_c2, other_init_c2])
+                self.orig_labels_x = np.append(self.orig_labels_x, [big_array[:, 0].astype(float), other_big_array[:, 0].astype(float)])
+                self.orig_labels_y = np.append(self.orig_labels_y, [big_array[:, 1].astype(float), other_big_array[:, 1].astype(float)])
+                self.list_init_x = np.append(self.list_init_x, [big_array[:, 2].astype(float), other_big_array[:, 2].astype(float)])
+                self.list_init_y = np.append(self.list_init_y, [big_array[:, 3].astype(float), other_big_array[:, 3].astype(float)])
+                self.list_imgs = np.append(self.list_imgs, [big_array[:, 5], other_big_array[:, 5]])
+                self.list_imgs_init = np.append(self.list_imgs_init, [big_array[:, 4], other_big_array[:, 4]])
                 self.list_res_x = np.append(
-                    self.list_res_x, np.repeat(res_x, n_obs-1))
+                    self.list_res_x, np.repeat(res_x, 2*(n_obs-1)))
                 self.list_res_y = np.append(
-                    self.list_res_y, np.repeat(res_y, n_obs-1))
-                self.list_init_x = np.append(
-                    self.list_init_x, np.repeat(df.x_newres.values[0], n_obs-1))
-                self.list_init_y = np.append(
-                    self.list_init_y, np.repeat(df.y_newres.values[0], n_obs-1))
-                self.orig_labels_x = np.append(
-                    self.orig_labels_x, df.x_newres.values[1:n_obs])
-                self.orig_labels_y = np.append(
-                    self.orig_labels_y, df.y_newres.values[1:n_obs])
+                    self.list_res_y, np.repeat(res_y, 2*(n_obs-1)))
+        print(self.list_imgs.shape)
+        print(self.orig_labels_x.shape)
         self.shuffle = shuffle
         self.u_x_list = np.random.randn(len(self.orig_labels_x))*10
         self.u_y_list = np.random.randn(len(self.orig_labels_y))*10
@@ -187,8 +228,12 @@ class DataLoader(keras.utils.Sequence):
                     c1_init,
                     c2_init,
                     width=self.width_template)
-                batch_imgs_init[i, :, :] = img_init[np.ravel(yax), np.ravel(xax)].reshape(self.width_template+1,
+                try:
+                    batch_imgs_init[i, :, :] = img_init[np.ravel(yax), np.ravel(xax)].reshape(self.width_template+1,
                                                                                           self.width_template+1)
+                except:
+                    print(c1_init, c2_init)
+                    print(self.list_imgs_init[idx])
                 # true location
                 c1, c2 = self.orig_labels_x[idx], self.orig_labels_y[idx]
                 # perturbed center of the template
