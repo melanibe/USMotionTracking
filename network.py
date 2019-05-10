@@ -151,18 +151,22 @@ def create_model(img_size,
     x = keras.layers.Reshape((img_size, img_size, 1))(img)
     x_init = keras.layers.Reshape((img_size, img_size, 1))(img_init)
     CNN_1 = keras.layers.Conv2D(
-        filters=96, kernel_size=7, activation=tf.nn.relu, strides=2)
-    pool_1 = keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2)
+        filters=32, kernel_size=7, activation=tf.nn.relu, strides=1)
+    CNN_1_2 = keras.layers.Conv2D(
+        filters=64, kernel_size=5, activation=tf.nn.relu, strides=1)
+    #pool_1 = keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2)
     x = CNN_1(x)
     x_init = CNN_1(x_init)
-    x = pool_1(x)
-    x_init = pool_1(x_init)
+    x = CNN_1_2(x)
+    x_init = CNN_1_2(x_init)
+    #x = pool_1(x)
+    #x_init = pool_1(x_init)
     normalize = keras.layers.Lambda(tf.nn.local_response_normalization)
     x = normalize(x)
     x_init = normalize(x_init)
     CNN_2 = keras.layers.Conv2D(
-        filters=256, kernel_size=5, activation=tf.nn.relu, strides=2)
-    pool_2 = keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2)
+        filters=256, kernel_size=3, activation=tf.nn.relu, strides=1)
+    pool_2 = keras.layers.MaxPooling2D(pool_size=(2, 2), strides=1)
     x = CNN_2(x)
     x_init = CNN_2(x_init)
     x = pool_2(x)
@@ -171,7 +175,7 @@ def create_model(img_size,
     x = normalize2(x)
     x_init = normalize2(x_init)
     CNN_3 = keras.layers.Conv2D(
-        filters=384, kernel_size=3, activation=tf.nn.relu, strides=1)
+        filters=384, kernel_size=3, activation=tf.nn.relu, strides=2)
     CNN_4 = keras.layers.Conv2D(
         filters=256, kernel_size=3, activation=tf.nn.relu, strides=1)
     pool_3 = keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2)
