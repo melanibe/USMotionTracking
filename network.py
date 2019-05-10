@@ -96,11 +96,9 @@ def create_model(img_size,
     """
     center_coords = keras.layers.Input(
         (2,), dtype='float32', name='center_coords')
-    big_template = keras.layers.Input((301, 301), dtype='float32', name='big')
     img = keras.layers.Input((img_size, img_size), dtype='float32', name='img')
     img_init = keras.layers.Input(
         shape=(img_size, img_size), dtype='float32', name='img_init')
-    big = keras.layers.Reshape((301, 301, 1))(big_template)
     x = keras.layers.Reshape((img_size, img_size, 1))(img)
     x_init = keras.layers.Reshape((img_size, img_size, 1))(img_init)
     print(x.shape)
@@ -116,11 +114,9 @@ def create_model(img_size,
     pool_1 = keras.layers.MaxPooling2D(pool_size=(2, 2))
     x = CNN_1_1(x)
     x_init = CNN_1_1(x_init)
-    big = CNN_1_1(big)
     if use_batch_norm:
         x = batch_1_1(x)
         x_init = batch_1_1(x_init)
-        big = batch_1_1(big)
    # x = CNN_1_2(x)
     #x_init = CNN_1_2(x_init)
     #if use_batch_norm:
@@ -128,16 +124,13 @@ def create_model(img_size,
     #     x_init = batch_1_2(x_init)
     x = CNN_1_3(x)
     x_init = CNN_1_3(x_init)
-    big = CNN_1_3(big)
     if use_batch_norm:
         x = batch_1_3(x)
         x_init = batch_1_3(x_init)
-        big = batch_1_3(big)
     if drop_out_rate > 0:
         drop1 = keras.layers.Dropout(rate=drop_out_rate)
         x = drop1(x)
         x_init = drop1(x_init)
-        big = drop1(big)
     #x = pool_1(x)
     #x_init = pool_1(x_init)
     if not h2 == 0:
@@ -153,11 +146,9 @@ def create_model(img_size,
         batch_2_3 = keras.layers.BatchNormalization()
         x = CNN_2_1(x)
         x_init = CNN_2_1(x_init)
-        big = CNN_2_1(big)
         if use_batch_norm:
             x = batch_2_1(x)
             x_init = batch_2_1(x_init)
-            big = batch_2_1(big)
         #x = CNN_2_2(x)
         #x_init = CNN_2_2(x_init)
         #if use_batch_norm:
@@ -165,18 +156,15 @@ def create_model(img_size,
         #     x_init = batch_2_2(x_init)
         x = CNN_2_3(x)
         x_init = CNN_2_3(x_init)
-        big = CNN_2_3(big)
         if use_batch_norm:
             x = batch_2_3(x)
             x_init = batch_2_3(x_init)
-            big = batch_2_3(big)
         # x = pool_2(x)
         # x_init = pool_2(x_init)
         if drop_out_rate > 0:
             drop2 = keras.layers.Dropout(rate=drop_out_rate)
             x = drop2(x)
             x_init = drop2(x_init)
-            big = drop2(big)
     if not h3 == 0:
         CNN_3_1 = keras.layers.Conv2D(
             filters=h3, kernel_size=3, activation=tf.nn.relu)
@@ -190,24 +178,18 @@ def create_model(img_size,
         batch_3_3 = keras.layers.BatchNormalization()
         x = CNN_3_1(x)
         x_init = CNN_3_1(x_init)
-        big = x = CNN_3_1(big)
         if use_batch_norm:
             x = batch_3_1(x)
             x_init = batch_3_1(x_init)
-            big = batch_3_1(big)
         x = CNN_3_2(x)
         x_init = CNN_3_2(x_init)
-        big = CNN_3_2(big)
         if use_batch_norm:
             x = batch_3_2(x)
             x_init = batch_3_2(x_init)
-            big = batch_3_2(big)
         x = CNN_3_3(x)
         x_init = CNN_3_3(x_init)
-        big = CNN_3_3(big)
         if use_batch_norm:
             x = batch_3_3(x)
-            x_init = batch_3_3(x_init)
             x_init = batch_3_3(x_init)
         #x = pool_3(x)
         #x_init = pool_3(x_init)
