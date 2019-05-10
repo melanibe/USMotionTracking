@@ -25,13 +25,13 @@ def find_template_pixel(c1, c2, width, max_x, max_y):
     if c1-1-w<0:
         xax = np.arange(0, w+w+2, step=1)
     elif c1+w > max_x:
-        xax = np.arange(max_x-(w+w+2), max_x, step=1)
+        xax = np.arange(max_x-(w+w+1), max_x, step=1)
     else:
         xax = np.arange(int(c1-1)-w, int(c1-1)+w+1, step=1)
     if c2-1-w<0:
         yax = np.arange(0, w+w+2, step=1)
     elif c2+w > max_y:
-        yax = np.arange(max_y-(w+w+2), max_y, step=1)    
+        yax = np.arange(max_y-(w+w+1), max_y, step=1)    
     else:
         yax = np.arange(int(c2-1)-w, int(c2-1)+w+1, step=1)
     # all the x,y in the template centered around c1, c2
