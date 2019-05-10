@@ -192,7 +192,7 @@ def create_model(img_size,
     # Wrap everythin in Keras model
     model = keras.Model(inputs=[img, img_init, center_coords], outputs=out)
     # Compile the model
-    model.compile(optimizer=keras.optimizers.Adam(),
+    model.compile(optimizer=keras.optimizers.Adam(lr=0.01),
                   loss=metrics_distance,
                   metrics=['mean_squared_error', metrics_distance])
     return model
