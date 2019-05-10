@@ -25,7 +25,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                                               width=params_dict['width'],
                                               search_w=params_dict['search_w'])
     xax, yax = find_template_pixel(c1, c2,
-                                   width=params_dict['width'])
+                                   params_dict['width'], img_current.shape[1], img_current.shape[0])
     template_current = img_current[np.ravel(
         yax), np.ravel(xax)].reshape(1, len(yax), len(xax))
     current_centers = np.asarray([c1, c2]).reshape(1, 2)
@@ -152,7 +152,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                 else:
                     list_centers = [[c1_init, c2_init]]
                 xax, yax = find_template_pixel(c1_init, c2_init,
-                                               width=params_dict['width'])
+                                               params_dict['width'], img_init.shape[1], img_init.shape[0])
                 template_init = img_init[np.ravel(yax), np.ravel(
                     xax)].reshape(1, len(yax), len(xax))
                 c1, c2 = c1_init, c2_init

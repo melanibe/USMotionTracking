@@ -17,13 +17,23 @@ def find_search_pixel(c1, c2, width=100):
     return np.meshgrid(xax, yax)
 
 
-def find_template_pixel(c1, c2, width=60):
+def find_template_pixel(c1, c2, width, max_x, max_y):
     ''' Find the pixels coordinates for the
     template centered around c1, c2
     '''
     w = width//2
-    xax = np.arange(int(c1-1)-w, int(c1-1)+w+1, step=1)
-    yax = np.arange(int(c2-1)-w, int(c2-1)+w+1, step=1)
+    if c1-1-w<0:
+        xax = np.arange(0, w+w+2, step=1)
+    elif c1+w > max_x:
+        xax = np.arange(max_x-w+w+2, max_x, step=1)
+    else:
+        xax = np.arange(int(c1-1)-w, int(c1-1)+w+1, step=1)
+    if c2-1-w<0:
+        yax = np.arange(0, w+w+2, step=1)
+    elif c2+w > max_y:
+        yax = np.arange(max_y-w+w+2, max_y, step=1)    
+    else:
+        yax = np.arange(int(c2-1)-w, int(c2-1)+w+1, step=1)
     # all the x,y in the template centered around c1, c2
     return np.meshgrid(xax, yax)
 
@@ -44,7 +54,7 @@ def get_NCC(i, j, im1, im2, width, yv, xv):
             return -1
     except IndexError:
         return -1
-    tmp_x, tmp_y = find_template_pixel(i, j, width)
+    tmp_x, tmp_y = find_template_pixel(i, j, width, im2.shape[1], im2.shape[0])
     try:
         x1 = np.ravel(im1[np.ravel(yv), np.ravel(xv)])
         x2 = np.ravel(im2[np.ravel(tmp_y), np.ravel(tmp_x)])
@@ -65,9 +75,9 @@ def NCC_best_template_search(c1, c2, im1, im2, width=60, c1_init=None, c2_init=N
     '''
     searchx, searchy = find_search_pixel(c1, c2, search_w)
     if c1_init is None:
-        xv, yv = find_template_pixel(c1, c2, width)
+        xv, yv = find_template_pixel(c1, c2, width, im1.shape[1], im1.shape[0])
     else:
-        xv, yv = find_template_pixel(c1_init, c2_init, width)
+        xv, yv = find_template_pixel(c1_init, c2_init, width, im1.shape[1], im1.shape[0])
     NCC_all = parmap.starmap(get_NCC, zip(np.ravel(searchx), np.ravel(
         searchy)), im1, im2, width, yv, xv, pm_parallel=True)
     maxNCC = np.max(NCC_all)

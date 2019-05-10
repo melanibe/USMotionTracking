@@ -129,6 +129,13 @@ class DataLoader(keras.utils.Sequence):
                 else:
                     df['x_newres'] = df['x']
                     df['y_newres'] = df['y']
+                c1_init, c2_init = df[['x_newres', 'y_newres']].values[0]
+                try:
+                    img_init = np.asarray(Image.open(os.path.join(data_dir, subfolder, 'Data', "{:04d}.png".format(int(1)))))
+                except FileNotFoundError:
+                    img_init = np.asarray(Image.open(os.path.join(data_dir, subfolder, 'Data', "{:05d}.png".format(int(1)))))
+                xax, yax = find_template_pixel(c1_init, c2_init, 300, img_init.shape[1], img_init.shape[0]) 
+                template_big = img_init[np.ravel(yax), np.ravel(xax)]    
                 listid = df.id.values[1:n_obs].astype(int).tolist()
                 big_array = np.asarray(parmap.map(return_orig_pairs, listid, df, self.data_dir, subfolder))
                 if self.type == 'train':
@@ -220,7 +227,7 @@ class DataLoader(keras.utils.Sequence):
                 xax, yax = find_template_pixel(
                     c1_init,
                     c2_init,
-                    width=self.width_template)
+                    self.width_template, img_init.shape[1], img_init.shape[0])
                 try:
                     batch_imgs_init[i, :, :] = img_init[np.ravel(yax), np.ravel(xax)].reshape(self.width_template+1,
                                                                                           self.width_template+1)
@@ -241,7 +248,7 @@ class DataLoader(keras.utils.Sequence):
                 xax, yax = find_template_pixel(
                     c1_perturbed,
                     c2_perturbed,
-                    width=self.width_template)
+                    self.width_template, img_init.shape[1], img_init.shape[0])
                 batch_imgs[i] = img[np.ravel(yax), np.ravel(xax)].reshape(self.width_template+1,
                                                                           self.width_template+1)
         except:
