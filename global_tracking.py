@@ -60,7 +60,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
     return c1, c2, old_c1, old_c2, maxNCC
 
 
-def run_global_cv(fold_iterator, logger, params_dict):
+def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
     eucl_dist_per_fold = []
     pixel_dist_per_fold = []
     for traindirs, testdirs in fold_iterator:
@@ -70,11 +70,11 @@ def run_global_cv(fold_iterator, logger, params_dict):
         logger.info('Training folders are {}'.format(traindirs))
         training_generator = DataLoader(
             data_dir, traindirs, 32,
-            width_template=params_dict['width'])
+            width_template=params_dict['width'], upsample=upsample)
         validation_generator = DataLoader(
             data_dir, testdirs, 32,
             width_template=params_dict['width'],
-            type='val')
+            type='val', upsample=upsample)
 
         # Design model
         model = create_model(params_dict['width']+1,
@@ -129,7 +129,7 @@ def run_global_cv(fold_iterator, logger, params_dict):
             except FileNotFoundError:
                 img_init = np.asarray(Image.open(
                     os.path.join(img_dir, "{:05d}.png".format(1))))
-            img_init = prepare_input_img(img_init, res_x, res_y)
+            img_init = prepare_input_img(img_init, res_x, res_y, upsample)
 
             for j, label_file in enumerate(list_label_files):
                 print(label_file)
@@ -138,12 +138,19 @@ def run_global_cv(fold_iterator, logger, params_dict):
                                  header=None,
                                  names=['id', 'x', 'y'],
                                  sep='\s+')
-                df['x_newres'] = df['x']*res_x/0.4
-                df['y_newres'] = df['y']*res_y/0.4
+                if upsample:
+                    df['x_newres'] = df['x']*res_x/0.4
+                    df['y_newres'] = df['y']*res_y/0.4
+                else:
+                    df['x_newres'] = df['x']
+                    df['y_newres'] = df['y']                    
                 c1_init, c2_init = df.loc[df['id'] == 1, [
                     'x_newres', 'y_newres']].values[0, :]
                 a, b = np.nonzero(img_init[:, 20:(len(img_init)-20)])
-                list_centers = [[c1_init*0.4/res_x, c2_init*0.4/res_y]]
+                if upsample:
+                    list_centers = [[c1_init*0.4/res_x, c2_init*0.4/res_y]]
+                else:
+                    list_centers = [[c1_init, c2_init]]
                 xax, yax = find_template_pixel(c1_init, c2_init,
                                                width=params_dict['width'])
                 template_init = img_init[np.ravel(yax), np.ravel(
@@ -159,29 +166,42 @@ def run_global_cv(fold_iterator, logger, params_dict):
                     except FileNotFoundError:
                         img_current = np.asarray(Image.open(
                             os.path.join(img_dir, "{:05d}.png".format(i))))
-                    img_current = prepare_input_img(img_current, res_x, res_y)
+                    img_current = prepare_input_img(img_current, res_x, res_y, upsample)
                     c1, c2, old_c1, old_c2, maxNCC = get_next_center(
                         c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
                     # project back in init coords
-                    c1_orig_coords = c1*0.4/res_x
-                    c2_orig_coords = c2*0.4/res_y
+                    if upsample:
+                        c1_orig_coords = c1*0.4/res_x
+                        c2_orig_coords = c2*0.4/res_y
+                    else:
+                        c1_orig_coords = c1
+                        c2_orig_coords = c2                        
                     list_centers = np.append(
                         list_centers, [c1_orig_coords, c2_orig_coords])
                     if i in df.id.values:
                         true = df.loc[df['id'] == i, ['x', 'y']].values[0]
                         diff_x = np.abs(c1_orig_coords-true[0])
                         diff_y = np.abs(c2_orig_coords-true[1])
-                        dist = np.sqrt(diff_x**2+diff_y**2)
-                        logger.info('ID {} : euclidean dist diff {}'
-                                    .format(i, dist*0.4))
+                        if upsample:
+                            dist = np.sqrt(diff_x**2+diff_y**2)
+                            logger.info('ID {} : euclidean dist diff {}'
+                                        .format(i, dist*0.4))
+                        else:
+                            dist = np.sqrt((res_x*diff_x)**2+(diff_y*res_y)**2)
+                            logger.info('ID {} : euclidean dist diff {}'
+                                        .format(i, dist))                            
                         if dist > 10:
                             logger.info(
                                 'Bad dist - maxNCC was {}'.format(maxNCC))
                             logger.info('True {},{}'.format(true[0], true[1]))
                             logger.info('Pred {},{}'.format(
                                 c1_orig_coords, c2_orig_coords))
-                            logger.info('NCC {},{}'.format(
-                                old_c1*0.4/res_x, old_c2*0.4/res_y))
+                            if upsample:
+                                logger.info('NCC {},{}'.format(
+                                    old_c1*0.4/res_x, old_c2*0.4/res_y))
+                            else:
+                                logger.info('NCC {},{}'.format(
+                                    old_c1, old_c2))
                 idx = df.id.values.astype(int)
                 list_centers = list_centers.reshape(-1, 2)
                 df_preds = list_centers[idx-1]
@@ -243,7 +263,7 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
                                    res_x, res_y, model,
                                    annotation_dir, params_dict, checkpoint_dir)
     return list_preds_df
-
+"""
 def predict_feature(j, label_file, img_init, n_obs,
                     img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir):
     df = pd.read_csv(os.path.join(annotation_dir, label_file),
@@ -271,7 +291,7 @@ def predict_feature(j, label_file, img_init, n_obs,
         except FileNotFoundError:
             img_current = np.asarray(Image.open(
                 os.path.join(img_dir, "{:05d}.png".format(i))))
-        img_current = prepare_input_img(img_current, res_x, res_y)
+        img_current = prepare_input_img(img_current, res_x, res_y, upsample)
         c1, c2, old_c1, old_c2, maxNCC = get_next_center(
             c1, c2, img_prev, img_current, params_dict, model, template_init)
         # project back in init coords
@@ -287,7 +307,7 @@ def predict_feature(j, label_file, img_init, n_obs,
         label_file)), header=False, index=False)
     print('{} DONE'.format(label_file))
     return pred_df
-
+"""
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
@@ -322,4 +342,4 @@ if __name__ == '__main__':
 
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     tf.keras.backend.set_session(sess)
-    run_global_cv(fold_iterator, logger, params_dict)
+    run_global_cv(fold_iterator, logger, params_dict, upsample=False)

@@ -62,10 +62,11 @@ def compute_euclidean_distance(preds, labels):
     )
 
 
-def prepare_input_img(img, res_x, res_y):
-    img = skimage.transform.resize(
-        img, (int(np.floor(img.shape[0]*res_y/0.4)),
-              int(np.floor(img.shape[1]*res_x/0.4))))
+def prepare_input_img(img, res_x, res_y, upsample = True):
+    if upsample:
+        img = skimage.transform.resize(
+            img, (int(np.floor(img.shape[0]*res_y/0.4)),
+                int(np.floor(img.shape[1]*res_x/0.4))))
     img = img/255.0
     return img
 
@@ -78,7 +79,9 @@ class DataLoader(keras.utils.Sequence):
                  width_template=60,
                  resolution_df=None,
                  shuffle=True,
-                 type='train'):
+                 type='train',
+                 upsample=True):
+        self.upsample = upsample
         self.type = type
         self.data_dir = data_dir
         self.list_dir = list_dir
@@ -120,8 +123,12 @@ class DataLoader(keras.utils.Sequence):
                                  names=['id', 'x', 'y'],
                                  sep='\s+')
                 n_obs = len(df)
-                df['x_newres'] = df['x']*res_x/0.4
-                df['y_newres'] = df['y']*res_y/0.4
+                if self.upsample:
+                    df['x_newres'] = df['x']*res_x/0.4
+                    df['y_newres'] = df['y']*res_y/0.4
+                else:
+                    df['x_newres'] = df['x']
+                    df['y_newres'] = df['y']
                 listid = df.id.values[1:n_obs].astype(int).tolist()
                 big_array = np.asarray(parmap.map(return_orig_pairs, listid, df, self.data_dir, subfolder))
                 if self.type == 'train':
@@ -202,11 +209,11 @@ class DataLoader(keras.utils.Sequence):
             for i, idx in enumerate(indexes):
                 img = np.asarray(Image.open(self.list_imgs[idx]))
                 img = prepare_input_img(img, self.list_res_x[idx],
-                                        self.list_res_y[idx])
+                                        self.list_res_y[idx], self.upsample)
                 img_init = np.asarray(Image.open(self.list_imgs_init[idx]))
                 img_init = prepare_input_img(
                     img_init, self.list_res_x[idx],
-                    self.list_res_y[idx])
+                    self.list_res_y[idx], self.upsample)
                 c1_init = self.list_init_x[idx]
                 c2_init = self.list_init_y[idx]
                 # print(c1_init, c2_init)
