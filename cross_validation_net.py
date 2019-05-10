@@ -139,9 +139,9 @@ def run_cv(fold_iterator, logger, params_dict):
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'cv_alone_1'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
-                   'h3': 0, 'embed_size': 128, 'width': 100, 'search_w': 50}
+    exp_name = 'cv_alone_specialmodeal'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 40,
+                   'h3': 64, 'embed_size': 256, 'width': 100, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')

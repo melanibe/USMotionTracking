@@ -7,7 +7,7 @@ Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
 '''
 
-def create_model(img_size,
+def create_model_vgg(img_size,
                  h1=32, h2=64, h3=128,
                  embed_size=128, d1=32,
                  drop_out_rate=0.1,
@@ -35,11 +35,11 @@ def create_model(img_size,
     Conv2_3 = keras.layers.Conv2D(
         filters=256, kernel_size=3, activation=tf.nn.relu, strides=1)
     Conv3_1 = keras.layers.Conv2D(
-        filters=512, kernel_size=3, activation=tf.nn.relu, strides=1)
+        filters=256, kernel_size=3, activation=tf.nn.relu, strides=1)
     Conv3_2 = keras.layers.Conv2D(
-        filters=512, kernel_size=3, activation=tf.nn.relu, strides=1)
+        filters=256, kernel_size=3, activation=tf.nn.relu, strides=1)
     Conv3_3 = keras.layers.Conv2D(
-        filters=512, kernel_size=3, activation=tf.nn.relu, strides=1)
+        filters=256, kernel_size=3, activation=tf.nn.relu, strides=1)
     MaxPool1 = keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2)
     MaxPool2 = keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2)
     Embedding = keras.layers.Dense(2048, activation=tf.nn.relu)
@@ -87,9 +87,9 @@ def create_model(img_size,
 
 
 
-def create_model_old(img_size,
+def create_model(img_size,
                  h1=32, h2=64, h3=128,
-                 embed_size=128, d1=256,
+                 embed_size=128, d1=128,
                  drop_out_rate=0.1,
                  use_batch_norm=True):
     """ This functions defines initializes the model.
@@ -110,7 +110,7 @@ def create_model_old(img_size,
     CNN_1_2 = keras.layers.Conv2D(
         filters=h1, kernel_size=3, activation=tf.nn.relu)
     CNN_1_3 = keras.layers.Conv2D(
-        filters=h1, kernel_size=5, activation=tf.nn.relu, strides=2)
+        filters=h1, kernel_size=5, activation=tf.nn.relu, strides=3)
     pool_1 = keras.layers.MaxPooling2D(pool_size=(2, 2))
     x = CNN_1_1(x)
     x_init = CNN_1_1(x_init)
