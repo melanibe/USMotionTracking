@@ -124,45 +124,30 @@ class DataLoader(keras.utils.Sequence):
                 df['y_newres'] = df['y']*res_y/0.4
                 listid = df.id.values[1:n_obs].astype(int).tolist()
                 big_array = np.asarray(parmap.map(return_orig_pairs, listid, df, self.data_dir, subfolder))
-                other_big_array = np.asarray(parmap.starmap(return_rdm_pairs, zip(listid, range(1, n_obs)), df, self.data_dir, subfolder))
-                #for j, idx in enumerate(df.id.values[2:n_obs], 2):
-                    # orig_init_c1, orig_init_c2 = df.x_newres.values[0], df.y_newres.values[0]
-                    # other_idx = np.random.choice(df.id.values[1:j])
-                    # other_init_c1, other_init_c2 = df.loc[df['id']==other_idx, ['x_newres', 'y_newres']].values[0]
-                    # try:
-                    #     Image.open(os.path.join(self.data_dir,
-                    #                             subfolder, 'Data', "0001.png"))
-                    #     self.list_imgs = np.append(self.list_imgs,
-                    #                             [os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(idx))),
-                    #                             os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(idx)))]
-                    #                             )
-                    #     self.list_imgs_init = np.append(self.list_imgs_init,
-                    #                                     [os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(1))),
-                    #                             os.path.join(self.data_dir, subfolder, 'Data', "{:04d}.png".format(int(other_idx)))]
-                    #                                     )
-                    # except FileNotFoundError:
-                    #     self.list_imgs = np.append(self.list_imgs,
-                    #                             [os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(idx))),
-                    #                             os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(idx)))]
-                    #                             )
-                    #     self.list_imgs_init = np.append(self.list_imgs_init,
-                    #                                     [os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(1))),
-                    #                             os.path.join(self.data_dir, subfolder, 'Data', "{:05d}.png".format(int(other_idx)))]
-                    #                                 )
-                    # self.orig_labels_x = np.append(self.orig_labels_x, np.repeat(df.x_newres.values[j], 2))
-                    # self.orig_labels_y = np.append(self.orig_labels_x, np.repeat(df.y_newres.values[j], 2))
-                    # self.list_init_x = np.append(self.list_init_x, [orig_init_c1, other_init_c1])
-                    # self.list_init_y = np.append(self.list_init_x, [orig_init_c2, other_init_c2])
-                self.orig_labels_x = np.append(self.orig_labels_x, [big_array[:, 0].astype(float), other_big_array[:, 0].astype(float)])
-                self.orig_labels_y = np.append(self.orig_labels_y, [big_array[:, 1].astype(float), other_big_array[:, 1].astype(float)])
-                self.list_init_x = np.append(self.list_init_x, [big_array[:, 2].astype(float), other_big_array[:, 2].astype(float)])
-                self.list_init_y = np.append(self.list_init_y, [big_array[:, 3].astype(float), other_big_array[:, 3].astype(float)])
-                self.list_imgs = np.append(self.list_imgs, [big_array[:, 5], other_big_array[:, 5]])
-                self.list_imgs_init = np.append(self.list_imgs_init, [big_array[:, 4], other_big_array[:, 4]])
-                self.list_res_x = np.append(
-                    self.list_res_x, np.repeat(res_x, 2*(n_obs-1)))
-                self.list_res_y = np.append(
-                    self.list_res_y, np.repeat(res_y, 2*(n_obs-1)))
+                if self.type == 'train':
+                    other_big_array = np.asarray(parmap.starmap(return_rdm_pairs, zip(listid, range(1, n_obs)), df, self.data_dir, subfolder))
+                    other_big_array2 = np.asarray(parmap.starmap(return_rdm_pairs, zip(listid, range(1, n_obs)), df, self.data_dir, subfolder))
+                    self.orig_labels_x = np.append(self.orig_labels_x, [big_array[:, 0].astype(float), other_big_array[:, 0].astype(float), other_big_array2[:, 0].astype(float)])
+                    self.orig_labels_y = np.append(self.orig_labels_y, [big_array[:, 1].astype(float), other_big_array[:, 1].astype(float), other_big_array2[:, 1].astype(float)])
+                    self.list_init_x = np.append(self.list_init_x, [big_array[:, 2].astype(float), other_big_array[:, 2].astype(float), other_big_array2[:, 2].astype(float)])
+                    self.list_init_y = np.append(self.list_init_y, [big_array[:, 3].astype(float), other_big_array[:, 3].astype(float), other_big_array2[:, 3].astype(float)])
+                    self.list_imgs = np.append(self.list_imgs, [big_array[:, 5], other_big_array[:, 5], other_big_array2[:, 5]])
+                    self.list_imgs_init = np.append(self.list_imgs_init, [big_array[:, 4], other_big_array[:, 4], other_big_array2[:, 4]])
+                    self.list_res_x = np.append(
+                        self.list_res_x, np.repeat(res_x, 3*(n_obs-1)))
+                    self.list_res_y = np.append(
+                        self.list_res_y, np.repeat(res_y, 3*(n_obs-1)))
+                else:
+                    self.orig_labels_x = np.append(self.orig_labels_x, big_array[:, 0].astype(float))
+                    self.orig_labels_y = np.append(self.orig_labels_y, big_array[:, 1].astype(float))
+                    self.list_init_x = np.append(self.list_init_x, big_array[:, 2].astype(float))
+                    self.list_init_y = np.append(self.list_init_y, big_array[:, 3].astype(float))
+                    self.list_imgs = np.append(self.list_imgs, big_array[:, 5])
+                    self.list_imgs_init = np.append(self.list_imgs_init, big_array[:, 4])
+                    self.list_res_x = np.append(
+                        self.list_res_x, np.repeat(res_x, (n_obs-1)))
+                    self.list_res_y = np.append(
+                        self.list_res_y, np.repeat(res_y, (n_obs-1)))
         print(self.list_imgs.shape)
         print(self.orig_labels_x.shape)
         self.shuffle = shuffle
