@@ -31,7 +31,7 @@ def find_template_pixel(c1, c2, width, max_x, max_y):
     if c2-1-w<0:
         yax = np.arange(0, w+w+2, step=1)
     elif c2+w > max_y:
-        yax = np.arange(max_y-w+w+2, max_y, step=1)    
+        yax = np.arange(max_y-(w+w+2), max_y, step=1)    
     else:
         yax = np.arange(int(c2-1)-w, int(c2-1)+w+1, step=1)
     # all the x,y in the template centered around c1, c2
