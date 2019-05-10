@@ -127,16 +127,17 @@ class DataLoader(keras.utils.Sequence):
                 if self.type == 'train':
                     other_big_array = np.asarray(parmap.starmap(return_rdm_pairs, zip(listid, range(1, n_obs)), df, self.data_dir, subfolder))
                     other_big_array2 = np.asarray(parmap.starmap(return_rdm_pairs, zip(listid, range(1, n_obs)), df, self.data_dir, subfolder))
-                    self.orig_labels_x = np.append(self.orig_labels_x, [big_array[:, 0].astype(float), other_big_array[:, 0].astype(float), other_big_array2[:, 0].astype(float)])
-                    self.orig_labels_y = np.append(self.orig_labels_y, [big_array[:, 1].astype(float), other_big_array[:, 1].astype(float), other_big_array2[:, 1].astype(float)])
-                    self.list_init_x = np.append(self.list_init_x, [big_array[:, 2].astype(float), other_big_array[:, 2].astype(float), other_big_array2[:, 2].astype(float)])
-                    self.list_init_y = np.append(self.list_init_y, [big_array[:, 3].astype(float), other_big_array[:, 3].astype(float), other_big_array2[:, 3].astype(float)])
-                    self.list_imgs = np.append(self.list_imgs, [big_array[:, 5], other_big_array[:, 5], other_big_array2[:, 5]])
-                    self.list_imgs_init = np.append(self.list_imgs_init, [big_array[:, 4], other_big_array[:, 4], other_big_array2[:, 4]])
+                    other_big_array3 = np.asarray(parmap.starmap(return_rdm_pairs, zip(listid, range(1, n_obs)), df, self.data_dir, subfolder))
+                    self.orig_labels_x = np.append(self.orig_labels_x, [big_array[:, 0].astype(float), other_big_array[:, 0].astype(float), other_big_array2[:, 0].astype(float), other_big_array3[:, 0].astype(float)])
+                    self.orig_labels_y = np.append(self.orig_labels_y, [big_array[:, 1].astype(float), other_big_array[:, 1].astype(float), other_big_array2[:, 1].astype(float), other_big_array3[:, 1].astype(float)])
+                    self.list_init_x = np.append(self.list_init_x, [big_array[:, 2].astype(float), other_big_array[:, 2].astype(float), other_big_array2[:, 2].astype(float), other_big_array3[:, 2].astype(float)])
+                    self.list_init_y = np.append(self.list_init_y, [big_array[:, 3].astype(float), other_big_array[:, 3].astype(float), other_big_array2[:, 3].astype(float), other_big_array3[:, 3].astype(float)])
+                    self.list_imgs = np.append(self.list_imgs, [big_array[:, 5], other_big_array[:, 5], other_big_array2[:, 5], other_big_array3[:, 5]])
+                    self.list_imgs_init = np.append(self.list_imgs_init, [big_array[:, 4], other_big_array[:, 4], other_big_array2[:, 4], other_big_array3[:, 4]])
                     self.list_res_x = np.append(
-                        self.list_res_x, np.repeat(res_x, 3*(n_obs-1)))
+                        self.list_res_x, np.repeat(res_x, 4*(n_obs-1)))
                     self.list_res_y = np.append(
-                        self.list_res_y, np.repeat(res_y, 3*(n_obs-1)))
+                        self.list_res_y, np.repeat(res_y, 4*(n_obs-1)))
                 else:
                     self.orig_labels_x = np.append(self.orig_labels_x, big_array[:, 0].astype(float))
                     self.orig_labels_y = np.append(self.orig_labels_y, big_array[:, 1].astype(float))
