@@ -94,7 +94,7 @@ Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
 '''
 
-def run_cv(fold_iterator, logger, params_dict):
+def run_cv(fold_iterator, logger, params_dict, upsample=True):
     for traindirs, testdirs in fold_iterator:
         # TRAIN LOCAL PREDICTION MODEL
         # Generators
@@ -102,11 +102,11 @@ def run_cv(fold_iterator, logger, params_dict):
         logger.info('Training folders are {}'.format(traindirs))
         training_generator = DataLoader(
             data_dir, traindirs, 32,
-            width_template=params_dict['width'])
+            width_template=params_dict['width'], upsample=upsample)
         validation_generator = DataLoader(
             data_dir, testdirs, 32,
             width_template=params_dict['width'],
-            type='val')
+            type='val',upsample=upsample)
 
         # Design model
         model = create_model(params_dict['width']+1,
@@ -139,9 +139,9 @@ def run_cv(fold_iterator, logger, params_dict):
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'cv_alone_specialmodeal'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 40,
-                   'h3': 64, 'embed_size': 256, 'width': 100, 'search_w': 50}
+    exp_name = 'new_cv_alone_2layers_25_up'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
+                   'h3': 0, 'embed_size': 256, 'width': 100, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
@@ -170,5 +170,5 @@ if __name__ == '__main__':
 
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     tf.keras.backend.set_session(sess)
-    run_cv(fold_iterator, logger, params_dict)
+    run_cv(fold_iterator, logger, params_dict,upsample=True)
 
