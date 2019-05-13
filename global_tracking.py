@@ -100,7 +100,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                                 validation_data=validation_generator,
                                 use_multiprocessing=True,
                                 epochs=params_dict['n_epochs'],
-                                workers=4, max_queue_size=20, steps_per_epoch=100)
+                                workers=4, max_queue_size=20)
             model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
 
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
@@ -226,8 +226,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                 pred_df['c2'] = list_centers[:, 1]
                 pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
                     label_file)), header=False, index=False)
-        eucl_dist_per_fold = np.append(
-            eucl_dist_per_fold, np.mean(curr_fold_dist))
+        eucl_dist_per_fold = np.append(eucl_dist_per_fold, np.mean(curr_fold_dist))
         pixel_dist_per_fold = np.append(
             pixel_dist_per_fold, np.mean(curr_fold_pix))
         logger.info('EUCLIDEAN DISTANCE CURRENT FOLD {}'.format(
@@ -311,9 +310,9 @@ def predict_feature(j, label_file, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new1'
+    exp_name = '2layers_noup'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 128, 'embed_size': 256, 'width': 80, 'search_w': 50}
+                   'h3': 0, 'embed_size': 256, 'width': 100, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
