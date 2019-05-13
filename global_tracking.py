@@ -107,6 +107,8 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
         curr_fold_dist = []
         curr_fold_pix = []
         for k, testfolder in enumerate(testdirs):
+            if k==0: # TODO just for debug
+                continue
             res_x, res_y = training_generator.resolution_df.loc[
                 training_generator.resolution_df['scan']
                 == testfolder, ['res_x', 'res_y']].values[0]
@@ -312,7 +314,7 @@ if __name__ == '__main__':
     np.random.seed(seed=42)
     exp_name = '2layers_noup'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 256, 'width': 100, 'search_w': 50}
+                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
