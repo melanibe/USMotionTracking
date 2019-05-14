@@ -38,13 +38,13 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
     if est_c1 is not None:
         c1_temp = est_c1.predict(c1_hist)
         c2_temp = est_c2.predict(c2_hist)
-    if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 10:
-        c1, c2 = c1_temp, c2_temp
-        if logger is None:
-            print('WARN: using temporal pred')
-        else:
-            logger.info('WARN: using temporal pred')
-    elif np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 15:
+        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 10:
+            c1, c2 = c1_temp, c2_temp
+            if logger is None:
+                print('WARN: using temporal pred')
+            else:
+                logger.info('WARN: using temporal pred')
+    if np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 15:
         if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < np.sqrt((old_c1-c1)**2+(old_c2-c2)**2):
             if logger is None:
                 print('WARN: VERY weird prediction mean maxNCC old_pred')
