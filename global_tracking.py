@@ -109,7 +109,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                             workers=6)
         '''
         try:
-            model.load_weights(os.path.join(checkpoint_dir, 'model.h5'))
+            model.load_weights(os.path.join(checkpoint_dir, 'model22.h5'))
         except OSError:
             print('here')
             model.fit_generator(generator=training_generator,
@@ -170,18 +170,32 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
             [X0[0:l], X1[0:l], X2[0:l], X3[0:l], X4[0:l], X5[0:l], X6[0:l], X7[0:l], X8[0:l], X9[0:l]]))
         fullY = np.transpose(np.vstack(
             [Y0[0:l], Y1[0:l], Y2[0:l], Y3[0:l], Y4[0:l], Y5[0:l], Y6[0:l], Y7[0:l], Y8[0:l], Y9[0:l]]))
+        smallFullX = np.transpose(np.vstack(
+            [X5[0:l], X6[0:l], X7[0:l], X8[0:l], X9[0:l]]))
+        smallFullY = np.transpose(np.vstack(
+            [Y5[0:l], Y6[0:l], Y7[0:l], Y8[0:l], Y9[0:l]]))
         c1_label = X10
         c2_label = Y10
         est_c1 = RidgeCV()
         est_c2 = RidgeCV()
+        est_small_c1 = RidgeCV()
+        est_small_c2 = RidgeCV()
         scores_c1 = cross_validate(est_c1, fullX, c1_label, cv=5, scoring=(
             'r2', 'neg_mean_squared_error'))
         scores_c2 = cross_validate(est_c2, fullY, c2_label, cv=5, scoring=(
+            'r2', 'neg_mean_squared_error'))
+        small_scores_c1 = cross_validate(est_small_c1, smallFullX, c1_label, cv=5, scoring=(
+            'r2', 'neg_mean_squared_error'))
+        small_scores_c2 = cross_validate(est_small_c2, smallFullY, c2_label, cv=5, scoring=(
             'r2', 'neg_mean_squared_error'))
         logger.info('c1')
         logger.info(scores_c1['test_neg_mean_squared_error'])
         logger.info('c2')
         logger.info(scores_c2['test_neg_mean_squared_error'])
+        logger.info('Small c1')
+        logger.info(small_scores_c1['test_neg_mean_squared_error'])
+        logger.info('Small c2')
+        logger.info(small_scores_c2['test_neg_mean_squared_error'])
         est_c1.fit(fullX, c1_label)
         est_c2.fit(fullY, c2_label)
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
@@ -430,8 +444,8 @@ def predict_feature(label_file, img_init,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = '2layers_noup_se20'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
+    exp_name = '2layers_noup_se20_temporal10'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
                    'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 20}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
