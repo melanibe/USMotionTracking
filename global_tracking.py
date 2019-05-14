@@ -19,7 +19,7 @@ CLUST Challenge
 
 
 def get_next_center(c1_prev, c2_prev, img_prev, img_current,
-                    params_dict, model, template_init, logger=None):
+                    params_dict, model, template_init, logger=None, est_c1=None, est_c2 = None, c1_hist=None, c2_hist=None):
     c1, c2, maxNCC = NCC_best_template_search(c1_prev,
                                               c2_prev,
                                               img_prev,
@@ -35,7 +35,16 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
         x=[template_current, template_init, current_centers])
     old_c1, old_c2 = c1, c2
     c1, c2 = pred[0, 0], pred[0, 1]
-    if np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 15:
+    if est_c1 is not None:
+        c1_temp = est_c1.predict(c1_hist)
+        c2_temp = est_c2.predict(c2_hist)
+    if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 10:
+        c1, c2 = c1_temp, c2_temp
+        if logger is None:
+            print('WARN: using temporal pred')
+        else:
+            logger.info('WARN: using temporal pred')
+    elif np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 15:
         if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < np.sqrt((old_c1-c1)**2+(old_c2-c2)**2):
             if logger is None:
                 print('WARN: VERY weird prediction mean maxNCC old_pred')
@@ -121,20 +130,11 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                 img_init = np.asarray(Image.open(
                     os.path.join(img_dir, "{:05d}.png".format(1))))
             img_init = prepare_input_img(img_init, res_x, res_y, upsample)
-            X0 = []
-            X1 = []
-            X2 = []
-            X3 = []
-            X4 = []
-            X5 = []
-            X6 = []
-            X7 = []
-            X8 = []
-            X9 = []
-            X10 = []
+            X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10 = [], [], [], [], [], [], [], [], [], [], []
+            Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9, Y10 = [], [], [], [], [], [], [], [], [], [], []
             for label in list_label_files:
                 df = predict_feature(label, img_init,
-                                    img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample)
+                                     img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample, limit=200)
                 n = len(df.c1.values)
                 X0 = np.append(X0, df.c1.values)
                 X1 = np.append(X1, df.c1.values[1:n])
@@ -147,14 +147,36 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                 X8 = np.append(X8, df.c1.values[8:n])
                 X9 = np.append(X9, df.c1.values[9:n])
                 X10 = np.append(X10, df.c1.values[10:n])
+                Y0 = np.append(X0, df.c2.values)
+                Y1 = np.append(X1, df.c2.values[1:n])
+                Y2 = np.append(X2, df.c2.values[2:n])
+                Y3 = np.append(X3, df.c2.values[3:n])
+                Y4 = np.append(X4, df.c2.values[4:n])
+                Y5 = np.append(X5, df.c2.values[5:n])
+                Y6 = np.append(X6, df.c2.values[6:n])
+                Y7 = np.append(X7, df.c2.values[7:n])
+                Y8 = np.append(X8, df.c2.values[8:n])
+                Y9 = np.append(X9, df.c2.values[9:n])
+                Y10 = np.append(X10, df.c2.values[10:n])
         l = len(X10)
-        fullX = np.transpose(np.vstack([X0[0:l], X1[0:l], X2[0:l], X3[0:l], X4[0:l], X5[0:l], X6[0:l], X7[0:l], X8[0:l], X9[0:l]]))
-        y = X10
-        est = RidgeCV()
-        scores = cross_validate(est, fullX, y, cv=5, scoring=('r2', 'neg_mean_squared_error'))
-        logger.info(scores['test_neg_mean_squared_error'])
-        est.fit(fullX, y)
-            
+        fullX = np.transpose(np.vstack(
+            [X0[0:l], X1[0:l], X2[0:l], X3[0:l], X4[0:l], X5[0:l], X6[0:l], X7[0:l], X8[0:l], X9[0:l]]))
+        fullY = np.transpose(np.vstack(
+            [Y0[0:l], Y1[0:l], Y2[0:l], Y3[0:l], Y4[0:l], Y5[0:l], Y6[0:l], Y7[0:l], Y8[0:l], Y9[0:l]]))
+        c1_label = X10
+        c2_label = Y10
+        est_c1 = RidgeCV()
+        est_c2 = RidgeCV()
+        scores_c1 = cross_validate(est_c1, fullX, c1_label, cv=5, scoring=(
+            'r2', 'neg_mean_squared_error'))
+        scores_c2 = cross_validate(est_c2, fullY, c2_label, cv=5, scoring=(
+            'r2', 'neg_mean_squared_error'))
+        logger.info('c1')
+        logger.info(scores_c1['test_neg_mean_squared_error'])
+        logger.info('c2')
+        logger.info(scores_c2['test_neg_mean_squared_error'])
+        est_c1.fit(fullX, c1_label)
+        est_c2.fit(fullY, c2_label)
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
         curr_fold_dist = []
         curr_fold_pix = []
@@ -222,8 +244,14 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                             os.path.join(img_dir, "{:05d}.png".format(i))))
                     img_current = prepare_input_img(
                         img_current, res_x, res_y, upsample)
-                    c1, c2, old_c1, old_c2, maxNCC = get_next_center(
-                        c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
+                    if i > 10:
+                        tmp = list_centers[-20:].reshape(-1, 2)
+                        assert tmp.shape[0] == 10
+                        c1, c2, old_c1, old_c2, maxNCC = get_next_center(
+                            c1, c2, img_prev, img_current, params_dict, model, template_init, logger, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
+                    else:
+                        c1, c2, old_c1, old_c2, maxNCC = get_next_center(
+                            c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
                     # project back in init coords
                     if upsample:
                         c1_orig_coords = c1*0.4/res_x
@@ -321,12 +349,15 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
 
 
 def predict_feature(label_file, img_init,
-                    img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample):
-    list_imgs = [os.path.join(img_dir, dI)
-                for dI in os.listdir(img_dir)
-                if (dI.endswith('png')
-                    and not dI.startswith('.'))]
-    n_obs = len(list_imgs)
+                    img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample, limit=None):
+    if limit is not None:
+        list_imgs = [os.path.join(img_dir, dI)
+                     for dI in os.listdir(img_dir)
+                     if (dI.endswith('png')
+                         and not dI.startswith('.'))]
+        n_obs = len(list_imgs)
+    else:
+        n_obs = limit
     df = pd.read_csv(os.path.join(annotation_dir, label_file),
                      header=None,
                      names=['id', 'x', 'y'],
@@ -336,10 +367,10 @@ def predict_feature(label_file, img_init,
     print(c1_init, c2_init)
     if upsample:
         xax, yax = find_template_pixel(c1_init*res_x/0.4, c2_init*res_y/0.4,
-                                    width=params_dict['width'], max_x=img_init.shape[1], max_y=img_init.shape[0])
+                                       width=params_dict['width'], max_x=img_init.shape[1], max_y=img_init.shape[0])
     else:
         xax, yax = find_template_pixel(c1_init, c2_init,
-                                    width=params_dict['width'], max_x=img_init.shape[1], max_y=img_init.shape[0])        
+                                       width=params_dict['width'], max_x=img_init.shape[1], max_y=img_init.shape[0])
     template_init = img_init[np.ravel(yax), np.ravel(
         xax)].reshape(1, len(yax), len(xax))
     img_current = img_init
@@ -349,7 +380,7 @@ def predict_feature(label_file, img_init,
         c2 = c2_init*res_y/0.4
     else:
         c1 = c1_init
-        c2 = c2_init        
+        c2 = c2_init
     for i in range(2, n_obs):
         if i % 50 == 0:
             print(i)
@@ -375,8 +406,9 @@ def predict_feature(label_file, img_init,
     pred_df['id'] = np.arange(1, len(list_centers)+1)
     pred_df['c1'] = list_centers[:, 0]
     pred_df['c2'] = list_centers[:, 1]
-    pred_df.to_csv(os.path.join(checkpoint_dir, '{}'.format(
-        label_file)), header=False, index=False)
+    if limit is None:
+        pred_df.to_csv(os.path.join(checkpoint_dir, '{}'.format(
+            label_file)), header=False, index=False)
     print('{} DONE'.format(label_file))
     return pred_df
 
