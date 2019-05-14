@@ -19,7 +19,7 @@ CLUST Challenge
 
 
 def get_next_center(c1_prev, c2_prev, img_prev, img_current,
-                    params_dict, model, template_init, logger=None, est_c1=None, est_c2 = None, c1_hist=None, c2_hist=None):
+                    params_dict, model, template_init, logger=None, est_c1=None, est_c2=None, c1_hist=None, c2_hist=None):
     c1, c2, maxNCC = NCC_best_template_search(c1_prev,
                                               c2_prev,
                                               img_prev,
@@ -130,8 +130,10 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                 img_init = np.asarray(Image.open(
                     os.path.join(img_dir, "{:05d}.png".format(1))))
             img_init = prepare_input_img(img_init, res_x, res_y, upsample)
-            X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10 = [], [], [], [], [], [], [], [], [], [], []
-            Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9, Y10 = [], [], [], [], [], [], [], [], [], [], []
+            X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10 = [
+            ], [], [], [], [], [], [], [], [], [], []
+            Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9, Y10 = [
+            ], [], [], [], [], [], [], [], [], [], []
             for label in list_label_files:
                 df = predict_feature(label, img_init,
                                      img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample, limit=200)
@@ -349,7 +351,9 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
 
 
 def predict_feature(label_file, img_init,
-                    img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample, limit=None):
+                    img_dir, res_x, res_y, model, annotation_dir,
+                    params_dict, checkpoint_dir, upsample,
+                    limit=None, est_c1=None, est_c2=None):
     if limit is None:
         list_imgs = [os.path.join(img_dir, dI)
                      for dI in os.listdir(img_dir)
@@ -392,8 +396,14 @@ def predict_feature(label_file, img_init,
             img_current = np.asarray(Image.open(
                 os.path.join(img_dir, "{:05d}.png".format(i))))
         img_current = prepare_input_img(img_current, res_x, res_y, upsample)
-        c1, c2, old_c1, old_c2, maxNCC = get_next_center(
-            c1, c2, img_prev, img_current, params_dict, model, template_init)
+        if ((est_c1 is None) or (i <= 10)):  # during training
+            c1, c2, old_c1, old_c2, maxNCC = get_next_center(
+                c1, c2, img_prev, img_current, params_dict, model, template_init)
+        else: # at test time use the trained temporal estimator
+            tmp = list_centers[-20:].reshape(-1, 2)
+            c1, c2, old_c1, old_c2, maxNCC = get_next_center(
+                c1, c2, img_prev, img_current, params_dict, model, template_init,
+                est_c1, est_c2, tmp[:, 0], tmp[:, 1])
         # project back in init coords
         if upsample:
             c1_orig_coords, c2_orig_coords = c1*0.4/res_x, c2*0.4/res_y
