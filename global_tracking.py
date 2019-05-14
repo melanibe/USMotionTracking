@@ -12,6 +12,9 @@ import tensorflow as tf
 import parmap
 from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import cross_val_score, cross_validate
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
+from sklearn.preprocessing import PolynomialFeatures
 '''
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
@@ -36,43 +39,62 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
     old_c1, old_c2 = c1, c2
     c1, c2 = pred[0, 0], pred[0, 1]
     if est_c1 is not None:
-        c1_temp = est_c1.predict(c1_hist)
-        c2_temp = est_c2.predict(c2_hist)
-        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 10:
-            c1, c2 = c1_temp, c2_temp
+        c1_temp = est_c1.predict(c1_hist.reshape(1, -1))
+        c2_temp = est_c2.predict(c2_hist.reshape(1, -1))
+        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 15:
             if logger is None:
                 print('WARN: using temporal pred')
             else:
                 logger.info('WARN: using temporal pred')
-    if np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 15:
+                logger.info('temp {}, {}'.format(c1_temp, c2_temp))
+                logger.info('net {}, {}'.format(c1, c2))
+            c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
+    if np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 10:
         if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < np.sqrt((old_c1-c1)**2+(old_c2-c2)**2):
+            if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < 5:
+                if logger is None:
+                    print('WARN: weird prediction mean maxNCC old_pred')
+                    print('previous {},{}'.format(c1_prev, c2_prev))
+                    print('NCC {},{}'.format(old_c1, old_c2))
+                    print('proposed by net {},{}'.format(c1, c2))
+                    print('kept {},{}'.format(
+                        (old_c1+c1_prev)/2, (old_c2+c2_prev)/2))
+                else:
+                    logger.info(
+                        'WARN: weird prediction mean both maxNCC old_pred')
+                    logger.info('previous {},{}'.format(c1_prev, c2_prev))
+                    logger.info('NCC {},{}'.format(old_c1, old_c2))
+                    logger.info('proposed by net {},{}'.format(c1, c2))
+                    logger.info('kept {},{}'.format(
+                        (old_c1+c1_prev)/2, (old_c2+c2_prev)/2))
+                c1, c2 = (old_c1+c1_prev)/2, (old_c2+c2_prev)/2
+        else:
             if logger is None:
-                print('WARN: VERY weird prediction mean maxNCC old_pred')
+                print('WARN: VERY VERY weird prediction keep old_pred')
                 print('previous {},{}'.format(c1_prev, c2_prev))
                 print('NCC {},{}'.format(old_c1, old_c2))
                 print('proposed by net {},{}'.format(c1, c2))
-                print('kept {},{}'.format(
-                    (old_c1+c1_prev)/2, (old_c2+c2_prev)/2))
+                print('kept {},{}'.format(c1_prev, c2_prev))
             else:
                 logger.info(
-                    'WARN: VERY weird prediction mean both maxNCC old_pred')
+                    'WARN: VERY VERY weird prediction keep old_pred')
                 logger.info('previous {},{}'.format(c1_prev, c2_prev))
                 logger.info('NCC {},{}'.format(old_c1, old_c2))
                 logger.info('proposed by net {},{}'.format(c1, c2))
                 logger.info('kept {},{}'.format(
-                    (old_c1+c1_prev)/2, (old_c2+c2_prev)/2))
-            c1, c2 = (old_c1+c1_prev)/2, (old_c2+c2_prev)/2
-        else:
-            if logger is None:
-                print('WARN: weird prediction mean both maxNCC current_pred')
-            else:
-                logger.info(
-                    'WARN: weird prediction mean both maxNCC current_pred')
-                logger.info('previous {},{}'.format(c1_prev, c2_prev))
-                logger.info('NCC {},{}'.format(old_c1, old_c2))
-                logger.info('proposed by net {},{}'.format(c1, c2))
-                logger.info('kept {},{}'.format((old_c1+c1)/2, (old_c2+c2)/2))
-            c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
+                    c1_prev, c2_prev))
+                c1, c2 = c1_prev, c2_prev
+        # else:
+        #     if logger is None:
+        #         print('WARN: weird prediction mean both maxNCC current_pred')
+        #     else:
+        #         logger.info(
+        #             'WARN: weird prediction mean both maxNCC current_pred')
+        #         logger.info('previous {},{}'.format(c1_prev, c2_prev))
+        #         logger.info('NCC {},{}'.format(old_c1, old_c2))
+        #         logger.info('proposed by net {},{}'.format(c1, c2))
+        #         logger.info('kept {},{}'.format((old_c1+c1)/2, (old_c2+c2)/2))
+        #     c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
     return c1, c2, old_c1, old_c2, maxNCC
 
 
@@ -109,7 +131,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                             workers=6)
         '''
         try:
-            model.load_weights(os.path.join(checkpoint_dir, 'model22.h5'))
+            model.load_weights(os.path.join(checkpoint_dir, 'model.h5'))
         except OSError:
             print('here')
             model.fit_generator(generator=training_generator,
@@ -134,75 +156,87 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
             except FileNotFoundError:
                 img_init = np.asarray(Image.open(
                     os.path.join(img_dir, "{:05d}.png".format(1))))
-            img_init = prepare_input_img(img_init, res_x, res_y, upsample)
+            # img_init = prepare_input_img(img_init, res_x, res_y, upsample)
+            list_imgs = [os.path.join(img_dir, dI)
+                         for dI in os.listdir(img_dir)
+                         if (dI.endswith('png')
+                             and not dI.startswith('.'))]
+            n_obs = len(list_imgs)
             X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10 = [
             ], [], [], [], [], [], [], [], [], [], []
             Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9, Y10 = [
             ], [], [], [], [], [], [], [], [], [], []
             for label in list_label_files:
-                df = predict_feature(label, img_init,
-                                     img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample, limit=200)
-                n = len(df.c1.values)
-                X0 = np.append(X0, df.c1.values)
-                X1 = np.append(X1, df.c1.values[1:n])
-                X2 = np.append(X2, df.c1.values[2:n])
-                X3 = np.append(X3, df.c1.values[3:n])
-                X4 = np.append(X4, df.c1.values[4:n])
-                X5 = np.append(X5, df.c1.values[5:n])
-                X6 = np.append(X6, df.c1.values[6:n])
-                X7 = np.append(X7, df.c1.values[7:n])
-                X8 = np.append(X8, df.c1.values[8:n])
-                X9 = np.append(X9, df.c1.values[9:n])
-                X10 = np.append(X10, df.c1.values[10:n])
-                Y0 = np.append(X0, df.c2.values)
-                Y1 = np.append(X1, df.c2.values[1:n])
-                Y2 = np.append(X2, df.c2.values[2:n])
-                Y3 = np.append(X3, df.c2.values[3:n])
-                Y4 = np.append(X4, df.c2.values[4:n])
-                Y5 = np.append(X5, df.c2.values[5:n])
-                Y6 = np.append(X6, df.c2.values[6:n])
-                Y7 = np.append(X7, df.c2.values[7:n])
-                Y8 = np.append(X8, df.c2.values[8:n])
-                Y9 = np.append(X9, df.c2.values[9:n])
-                Y10 = np.append(X10, df.c2.values[10:n])
-        l = len(X10)
+                print(label)
+                df = pd.read_csv(os.path.join(annotation_dir, label),
+                                 header=None,
+                                 names=['id', 'x', 'y'],
+                                 sep='\s+')
+                c1_interpolate = np.interp(
+                    np.arange(1, n_obs+1), df.id.values, df.x.values)
+                c2_interpolate = np.interp(
+                    np.arange(1, n_obs+1), df.id.values, df.y.values)
+                n = len(c1_interpolate)
+                X0 = np.append(X0, c1_interpolate)
+                X1 = np.append(X1, c1_interpolate[1:n])
+                X2 = np.append(X2, c1_interpolate[2:n])
+                X3 = np.append(X3, c1_interpolate[3:n])
+                X4 = np.append(X4, c1_interpolate[4:n])
+                X5 = np.append(X5, c1_interpolate[5:n])
+                """
+                X6 = np.append(X6, c1_interpolate[6:n])
+                X7 = np.append(X7, c1_interpolate[7:n])
+                X8 = np.append(X8, c1_interpolate[8:n])
+                X9 = np.append(X9, c1_interpolate[9:n])
+                X10 = np.append(X10, c1_interpolate[10:n])
+                """
+                Y0 = np.append(Y0, c2_interpolate)
+                Y1 = np.append(Y1, c2_interpolate[1:n])
+                Y2 = np.append(Y2, c2_interpolate[2:n])
+                Y3 = np.append(Y3, c2_interpolate[3:n])
+                Y4 = np.append(Y4, c2_interpolate[4:n])
+                Y5 = np.append(Y5, c2_interpolate[5:n])
+                """
+                Y6 = np.append(Y6, c2_interpolate[6:n])
+                Y7 = np.append(Y7, c2_interpolate[7:n])
+                Y8 = np.append(Y8, c2_interpolate[8:n])
+                Y9 = np.append(Y9, c2_interpolate[9:n])
+                Y10 = np.append(Y10, c2_interpolate[10:n])
+                """
+        l = len(X5)
         fullX = np.transpose(np.vstack(
-            [X0[0:l], X1[0:l], X2[0:l], X3[0:l], X4[0:l], X5[0:l], X6[0:l], X7[0:l], X8[0:l], X9[0:l]]))
+            [X0[0:l], X1[0:l], X2[0:l], X3[0:l], X4[0:l]]))
         fullY = np.transpose(np.vstack(
-            [Y0[0:l], Y1[0:l], Y2[0:l], Y3[0:l], Y4[0:l], Y5[0:l], Y6[0:l], Y7[0:l], Y8[0:l], Y9[0:l]]))
-        smallFullX = np.transpose(np.vstack(
-            [X5[0:l], X6[0:l], X7[0:l], X8[0:l], X9[0:l]]))
-        smallFullY = np.transpose(np.vstack(
-            [Y5[0:l], Y6[0:l], Y7[0:l], Y8[0:l], Y9[0:l]]))
-        c1_label = X10
-        c2_label = Y10
+            [Y0[0:l], Y1[0:l], Y2[0:l], Y3[0:l], Y4[0:l]]))
+        c1_label = X5
+        c2_label = Y5
         est_c1 = RidgeCV()
         est_c2 = RidgeCV()
-        est_small_c1 = RidgeCV()
-        est_small_c2 = RidgeCV()
+        #est_small_c1 = RidgeCV()
+        #est_small_c2 = RidgeCV()
+        logger.info('c1')
         scores_c1 = cross_validate(est_c1, fullX, c1_label, cv=5, scoring=(
             'r2', 'neg_mean_squared_error'))
-        scores_c2 = cross_validate(est_c2, fullY, c2_label, cv=5, scoring=(
-            'r2', 'neg_mean_squared_error'))
-        small_scores_c1 = cross_validate(est_small_c1, smallFullX, c1_label, cv=5, scoring=(
-            'r2', 'neg_mean_squared_error'))
-        small_scores_c2 = cross_validate(est_small_c2, smallFullY, c2_label, cv=5, scoring=(
-            'r2', 'neg_mean_squared_error'))
-        logger.info('c1')
         logger.info(scores_c1['test_neg_mean_squared_error'])
         logger.info('c2')
+        scores_c2 = cross_validate(est_c2, fullY, c2_label, cv=5, scoring=(
+            'r2', 'neg_mean_squared_error'))
         logger.info(scores_c2['test_neg_mean_squared_error'])
-        logger.info('Small c1')
-        logger.info(small_scores_c1['test_neg_mean_squared_error'])
-        logger.info('Small c2')
-        logger.info(small_scores_c2['test_neg_mean_squared_error'])
+        # small_scores_c1 = cross_validate(est_small_c1, smallFullX, c1_label, cv=5, scoring=(
+        #     'r2', 'neg_mean_squared_error'))
+        # logger.info('Small c1')
+        # logger.info(small_scores_c1['test_neg_mean_squared_error'])
+        # small_scores_c2 = cross_validate(est_small_c2, smallFullY, c2_label, cv=5, scoring=(
+        #     'r2', 'neg_mean_squared_error'))
+        # logger.info('Small c2')
+        #logger.info(small_scores_c2['test_neg_mean_squared_error'])
         est_c1.fit(fullX, c1_label)
         est_c2.fit(fullY, c2_label)
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
         curr_fold_dist = []
         curr_fold_pix = []
         for k, testfolder in enumerate(testdirs):
-            if k == 0:  # TODO just for debug
+            if k==0:
                 continue
             res_x, res_y = training_generator.resolution_df.loc[
                 training_generator.resolution_df['scan']
@@ -265,9 +299,9 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                             os.path.join(img_dir, "{:05d}.png".format(i))))
                     img_current = prepare_input_img(
                         img_current, res_x, res_y, upsample)
-                    if i > 10:
-                        tmp = list_centers[-20:].reshape(-1, 2)
-                        assert tmp.shape[0] == 10
+                    if i > 5:
+                        tmp = list_centers[-10:].reshape(-1, 2)
+                        assert tmp.shape[0] == 5
                         c1, c2, old_c1, old_c2, maxNCC = get_next_center(
                             c1, c2, img_prev, img_current, params_dict, model, template_init, logger, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
                     else:
@@ -418,7 +452,7 @@ def predict_feature(label_file, img_init,
         if ((est_c1 is None) or (i <= 10)):  # during training
             c1, c2, old_c1, old_c2, maxNCC = get_next_center(
                 c1, c2, img_prev, img_current, params_dict, model, template_init)
-        else: # at test time use the trained temporal estimator
+        else:  # at test time use the trained temporal estimator
             tmp = list_centers[-20:].reshape(-1, 2)
             c1, c2, old_c1, old_c2, maxNCC = get_next_center(
                 c1, c2, img_prev, img_current, params_dict, model, template_init,
