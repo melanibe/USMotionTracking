@@ -350,7 +350,7 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
 
 def predict_feature(label_file, img_init,
                     img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample, limit=None):
-    if limit is not None:
+    if limit is None:
         list_imgs = [os.path.join(img_dir, dI)
                      for dI in os.listdir(img_dir)
                      if (dI.endswith('png')
