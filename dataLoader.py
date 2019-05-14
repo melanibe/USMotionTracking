@@ -134,6 +134,13 @@ class DataLoader(keras.utils.Sequence):
                     img_init = np.asarray(Image.open(os.path.join(data_dir, subfolder, 'Data', "{:04d}.png".format(int(1)))))
                 except FileNotFoundError:
                     img_init = np.asarray(Image.open(os.path.join(data_dir, subfolder, 'Data', "{:05d}.png".format(int(1)))))
+                if np.isnan(c1_init):
+                    print(label_file)
+                    print(df.head())
+                    print(df[['x', 'y']])
+                    print(df[['x_newres', 'y_newres']])
+                    print(c1_init, c2_init)
+                    print(img_init.shape[1], img_init.shape[0])
                 xax, yax = find_template_pixel(c1_init, c2_init, 300, img_init.shape[1], img_init.shape[0]) 
                 template_big = img_init[np.ravel(yax), np.ravel(xax)]    
                 listid = df.id.values[1:n_obs].astype(int).tolist()

@@ -23,13 +23,13 @@ def find_template_pixel(c1, c2, width, max_x, max_y):
     '''
     w = width//2
     if c1-1-w<0:
-        xax = np.arange(0, w+w+2, step=1)
+        xax = np.arange(0, w+w+1, step=1)
     elif c1+w > max_x:
         xax = np.arange(max_x-(w+w+1), max_x, step=1)
     else:
         xax = np.arange(int(c1-1)-w, int(c1-1)+w+1, step=1)
     if c2-1-w<0:
-        yax = np.arange(0, w+w+2, step=1)
+        yax = np.arange(0, w+w+1, step=1)
     elif c2+w > max_y:
         yax = np.arange(max_y-(w+w+1), max_y, step=1)    
     else:
@@ -79,7 +79,7 @@ def NCC_best_template_search(c1, c2, im1, im2, width=60, c1_init=None, c2_init=N
     else:
         xv, yv = find_template_pixel(c1_init, c2_init, width, im1.shape[1], im1.shape[0])
     NCC_all = parmap.starmap(get_NCC, zip(np.ravel(searchx), np.ravel(
-        searchy)), im1, im2, width, yv, xv, pm_parallel=True)
+        searchy)), im1, im2, width, yv, xv, pm_parallel=True, pm_processes=2)
     maxNCC = np.max(NCC_all)
     if np.sum(NCC_all == -1) > 0:
         print('Number of weird NCC {}'.format(np.sum(NCC_all == -1)))

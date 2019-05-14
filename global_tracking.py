@@ -10,6 +10,8 @@ from tensorflow import keras
 from utils import get_logger, get_default_params
 import tensorflow as tf
 import parmap
+from sklearn.linear_model import RidgeCV
+from sklearn.model_selection import cross_val_score, cross_validate
 '''
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
@@ -93,7 +95,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                             workers=6)
         '''
         try:
-            model.load_weights(os.path.join(checkpoint_dir, 'model22.h5'))
+            model.load_weights(os.path.join(checkpoint_dir, 'model.h5'))
         except OSError:
             print('here')
             model.fit_generator(generator=training_generator,
@@ -102,12 +104,62 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                                 epochs=params_dict['n_epochs'],
                                 workers=4, max_queue_size=20)
             model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
-
+        for folder in traindirs:
+            res_x, res_y = training_generator.resolution_df.loc[
+                training_generator.resolution_df['scan']
+                == folder, ['res_x', 'res_y']].values[0]
+            img_dir = os.path.join(data_dir, folder, 'Data')
+            annotation_dir = os.path.join(data_dir, folder, 'Annotation')
+            list_label_files = [os.path.join(annotation_dir, dI) for dI
+                                in os.listdir(annotation_dir)
+                                if (dI.endswith('txt')
+                                    and not dI.startswith('.'))]
+            try:
+                img_init = np.asarray(Image.open(
+                    os.path.join(img_dir, "{:04d}.png".format(1))))
+            except FileNotFoundError:
+                img_init = np.asarray(Image.open(
+                    os.path.join(img_dir, "{:05d}.png".format(1))))
+            img_init = prepare_input_img(img_init, res_x, res_y, upsample)
+            X0 = []
+            X1 = []
+            X2 = []
+            X3 = []
+            X4 = []
+            X5 = []
+            X6 = []
+            X7 = []
+            X8 = []
+            X9 = []
+            X10 = []
+            for label in list_label_files:
+                df = predict_feature(label, img_init,
+                                    img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample)
+                n = len(df.c1.values)
+                X0 = np.append(X0, df.c1.values)
+                X1 = np.append(X1, df.c1.values[1:n])
+                X2 = np.append(X2, df.c1.values[2:n])
+                X3 = np.append(X3, df.c1.values[3:n])
+                X4 = np.append(X4, df.c1.values[4:n])
+                X5 = np.append(X5, df.c1.values[5:n])
+                X6 = np.append(X6, df.c1.values[6:n])
+                X7 = np.append(X7, df.c1.values[7:n])
+                X8 = np.append(X8, df.c1.values[8:n])
+                X9 = np.append(X9, df.c1.values[9:n])
+                X10 = np.append(X10, df.c1.values[10:n])
+        l = len(X10)
+        fullX = np.transpose(np.vstack([X0[0:l], X1[0:l], X2[0:l], X3[0:l], X4[0:l], X5[0:l], X6[0:l], X7[0:l], X8[0:l], X9[0:l]]))
+        y = X10
+        est = RidgeCV()
+        scores = cross_validate(est, fullX, y, cv=5, scoring=('r2', 'neg_mean_squared_error'))
+        logger.info(scores['test_neg_mean_squared_error'])
+        est.fit(fullX, y)
+            
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
         curr_fold_dist = []
         curr_fold_pix = []
         for k, testfolder in enumerate(testdirs):
-            if k==0: # TODO just for debug
+            if k == 0:  # TODO just for debug
                 continue
             res_x, res_y = training_generator.resolution_df.loc[
                 training_generator.resolution_df['scan']
@@ -145,7 +197,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                     df['y_newres'] = df['y']*res_y/0.4
                 else:
                     df['x_newres'] = df['x']
-                    df['y_newres'] = df['y']                    
+                    df['y_newres'] = df['y']
                 c1_init, c2_init = df.loc[df['id'] == 1, [
                     'x_newres', 'y_newres']].values[0, :]
                 a, b = np.nonzero(img_init[:, 20:(len(img_init)-20)])
@@ -168,7 +220,8 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                     except FileNotFoundError:
                         img_current = np.asarray(Image.open(
                             os.path.join(img_dir, "{:05d}.png".format(i))))
-                    img_current = prepare_input_img(img_current, res_x, res_y, upsample)
+                    img_current = prepare_input_img(
+                        img_current, res_x, res_y, upsample)
                     c1, c2, old_c1, old_c2, maxNCC = get_next_center(
                         c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
                     # project back in init coords
@@ -177,7 +230,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                         c2_orig_coords = c2*0.4/res_y
                     else:
                         c1_orig_coords = c1
-                        c2_orig_coords = c2                        
+                        c2_orig_coords = c2
                     list_centers = np.append(
                         list_centers, [c1_orig_coords, c2_orig_coords])
                     if i in df.id.values:
@@ -191,7 +244,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                         else:
                             dist = np.sqrt((res_x*diff_x)**2+(diff_y*res_y)**2)
                             logger.info('ID {} : euclidean dist diff {}'
-                                        .format(i, dist))                            
+                                        .format(i, dist))
                         if dist > 10:
                             logger.info(
                                 'Bad dist - maxNCC was {}'.format(maxNCC))
@@ -228,7 +281,8 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                 pred_df['c2'] = list_centers[:, 1]
                 pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
                     label_file)), header=False, index=False)
-        eucl_dist_per_fold = np.append(eucl_dist_per_fold, np.mean(curr_fold_dist))
+        eucl_dist_per_fold = np.append(
+            eucl_dist_per_fold, np.mean(curr_fold_dist))
         pixel_dist_per_fold = np.append(
             pixel_dist_per_fold, np.mean(curr_fold_pix))
         logger.info('EUCLIDEAN DISTANCE CURRENT FOLD {}'.format(
@@ -242,7 +296,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
 
 
 def predict_testfolder(testfolder, data_dir, res_x, res_y,
-                       model, params_dict):
+                       model, params_dict, upsample):
     annotation_dir = os.path.join(data_dir, testfolder, 'Annotation')
     img_dir = os.path.join(data_dir, testfolder, 'Data')
 
@@ -257,31 +311,45 @@ def predict_testfolder(testfolder, data_dir, res_x, res_y,
     except FileNotFoundError:
         img_init = np.asarray(Image.open(
             os.path.join(img_dir, "{:05d}.png".format(1))))
-        img_init = prepare_input_img(img_init, res_x, res_y)
+        img_init = prepare_input_img(img_init, res_x, res_y, upsample)
     list_preds_df = parmap.starmap(predict_feature,
-                                   enumerate(list_label_files),
+                                   list_label_files,
                                    img_init, img_dir,
                                    res_x, res_y, model,
-                                   annotation_dir, params_dict, checkpoint_dir)
+                                   annotation_dir, params_dict, checkpoint_dir, upsample)
     return list_preds_df
-"""
-def predict_feature(j, label_file, img_init, n_obs,
-                    img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir):
+
+
+def predict_feature(label_file, img_init,
+                    img_dir, res_x, res_y, model, annotation_dir, params_dict, checkpoint_dir, upsample):
+    list_imgs = [os.path.join(img_dir, dI)
+                for dI in os.listdir(img_dir)
+                if (dI.endswith('png')
+                    and not dI.startswith('.'))]
+    n_obs = len(list_imgs)
     df = pd.read_csv(os.path.join(annotation_dir, label_file),
                      header=None,
                      names=['id', 'x', 'y'],
                      sep='\s+')
-    n_obs = len(df.id.values)
     c1_init, c2_init = df.loc[df['id'] == 1, [
         'x', 'y']].values[0, :]
-    xax, yax = find_template_pixel(c1_init*res_x/0.4, c2_init*res_y*0.4,
-                                   width=params_dict['width'])
+    print(c1_init, c2_init)
+    if upsample:
+        xax, yax = find_template_pixel(c1_init*res_x/0.4, c2_init*res_y/0.4,
+                                    width=params_dict['width'], max_x=img_init.shape[1], max_y=img_init.shape[0])
+    else:
+        xax, yax = find_template_pixel(c1_init, c2_init,
+                                    width=params_dict['width'], max_x=img_init.shape[1], max_y=img_init.shape[0])        
     template_init = img_init[np.ravel(yax), np.ravel(
         xax)].reshape(1, len(yax), len(xax))
     img_current = img_init
     list_centers = [[c1_init, c2_init]]
-    c1 = c1_init*res_x/0.4
-    c2 = c2_init*res_y/0.4
+    if upsample:
+        c1 = c1_init*res_x/0.4
+        c2 = c2_init*res_y/0.4
+    else:
+        c1 = c1_init
+        c2 = c2_init        
     for i in range(2, n_obs):
         if i % 50 == 0:
             print(i)
@@ -296,24 +364,27 @@ def predict_feature(j, label_file, img_init, n_obs,
         c1, c2, old_c1, old_c2, maxNCC = get_next_center(
             c1, c2, img_prev, img_current, params_dict, model, template_init)
         # project back in init coords
-        c1_orig_coords, c2_orig_coords = c1*0.4/res_x, c2*0.4/res_y
+        if upsample:
+            c1_orig_coords, c2_orig_coords = c1*0.4/res_x, c2*0.4/res_y
+        else:
+            c1_orig_coords, c2_orig_coords = c1, c2
         list_centers = np.append(
             list_centers, [c1_orig_coords, c2_orig_coords])
         list_centers = list_centers.reshape(-1, 2)
     pred_df = pd.DataFrame()
-    pred_df['id'] = np.arange(1, n_obs)
+    pred_df['id'] = np.arange(1, len(list_centers)+1)
     pred_df['c1'] = list_centers[:, 0]
     pred_df['c2'] = list_centers[:, 1]
     pred_df.to_csv(os.path.join(checkpoint_dir, '{}'.format(
         label_file)), header=False, index=False)
     print('{} DONE'.format(label_file))
     return pred_df
-"""
+
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
     exp_name = '2layers_noup_se20'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 20,
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
                    'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 20}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
