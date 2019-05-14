@@ -312,9 +312,9 @@ def predict_feature(j, label_file, img_init, n_obs,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = '2layers_noup'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 50}
+    exp_name = '2layers_noup_se20'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 20,
+                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 20}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
