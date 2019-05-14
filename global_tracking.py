@@ -48,6 +48,11 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
         if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < np.sqrt((old_c1-c1)**2+(old_c2-c2)**2):
             if logger is None:
                 print('WARN: VERY weird prediction mean maxNCC old_pred')
+                print('previous {},{}'.format(c1_prev, c2_prev))
+                print('NCC {},{}'.format(old_c1, old_c2))
+                print('proposed by net {},{}'.format(c1, c2))
+                print('kept {},{}'.format(
+                    (old_c1+c1_prev)/2, (old_c2+c2_prev)/2))
             else:
                 logger.info(
                     'WARN: VERY weird prediction mean both maxNCC old_pred')
