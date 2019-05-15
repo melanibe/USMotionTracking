@@ -41,7 +41,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
     if est_c1 is not None:
         c1_temp = est_c1.predict(c1_hist.reshape(1, -1))
         c2_temp = est_c2.predict(c2_hist.reshape(1, -1))
-        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 15:
+        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 10:
             if logger is None:
                 print('WARN: using temporal pred')
             else:
@@ -49,6 +49,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 logger.info('temp {}, {}'.format(c1_temp, c2_temp))
                 logger.info('net {}, {}'.format(c1, c2))
             c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
+    """
     if np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 10:
         if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < np.sqrt((old_c1-c1)**2+(old_c2-c2)**2):
             if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < 5:
@@ -95,6 +96,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
         #         logger.info('proposed by net {},{}'.format(c1, c2))
         #         logger.info('kept {},{}'.format((old_c1+c1)/2, (old_c2+c2)/2))
         #     c1, c2 = (old_c1+c1)/2, (old_c2+c2)/2
+        """
     return c1, c2, old_c1, old_c2, maxNCC
 
 
@@ -480,7 +482,7 @@ if __name__ == '__main__':
     np.random.seed(seed=42)
     exp_name = '2layers_noup_se20_temporal10'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 20}
+                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 2}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
