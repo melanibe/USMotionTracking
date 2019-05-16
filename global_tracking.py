@@ -49,8 +49,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 logger.info('temp {}, {}'.format(c1_temp, c2_temp))
                 logger.info('net {}, {}'.format(c1, c2))
             c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
-    if maxNCC < 0.85:
-        logger.info('WARN WARN MAX NCC {}'.format(maxNCC))
+    if maxNCC < 0.82:
         c1_save, c2_save, other_maxNCC = NCC_best_template_search(c1_prev,
                                                 c2_prev,
                                                 img_prev,
@@ -58,7 +57,11 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                                                 width=params_dict['width'],
                                                 search_w=20)
         if other_maxNCC > 0.90:
-            c1, c2 = np.mean([c1_temp, c1_save]), np.mean([c2_temp, c2_save])
+            logger.info('WARN WARN USING MAX NCC')
+            if est_c1 is not None:
+                c1, c2 = np.mean([c1_temp, c1_save]), np.mean([c2_temp, c2_save])
+            else:
+                c1, c2 = c1_save, c2_save
     """
     if np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 10:
         if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < np.sqrt((old_c1-c1)**2+(old_c2-c2)**2):
