@@ -238,8 +238,6 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
         curr_fold_dist = []
         curr_fold_pix = []
         for k, testfolder in enumerate(testdirs):
-            if k==0:
-                continue
             res_x, res_y = training_generator.resolution_df.loc[
                 training_generator.resolution_df['scan']
                 == testfolder, ['res_x', 'res_y']].values[0]
@@ -480,7 +478,7 @@ def predict_feature(label_file, img_init,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = '2layers_noup_se2_temporal10'
+    exp_name = '2layers_noup_se2_temporal10_10epochs'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
                    'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 2}
 
