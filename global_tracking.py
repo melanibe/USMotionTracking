@@ -41,7 +41,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
     if est_c1 is not None:
         c1_temp = est_c1.predict(c1_hist.reshape(1, -1))
         c2_temp = est_c2.predict(c2_hist.reshape(1, -1))
-        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 10:
+        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 5:
             if logger is None:
                 print('WARN: using temporal pred')
             else:
@@ -49,6 +49,16 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 logger.info('temp {}, {}'.format(c1_temp, c2_temp))
                 logger.info('net {}, {}'.format(c1, c2))
             c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
+    if maxNCC < 0.85:
+        logger.info('WARN WARN MAX NCC {}'.format(maxNCC))
+        c1_save, c2_save, other_maxNCC = NCC_best_template_search(c1_prev,
+                                                c2_prev,
+                                                img_prev,
+                                                img_current,
+                                                width=params_dict['width'],
+                                                search_w=20)
+        if other_maxNCC > 0.90:
+            c1, c2 = np.mean([c1_temp, c1_save]), np.mean([c2_temp, c2_save])
     """
     if np.sqrt((c1_prev-c1)**2+(c2_prev-c2)**2) > 10:
         if np.sqrt((old_c1-c1_prev)**2+(old_c2-c2_prev)**2) < np.sqrt((old_c1-c1)**2+(old_c2-c2)**2):
@@ -480,9 +490,9 @@ def predict_feature(label_file, img_init,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = '2layers_noup_se2_temporal10'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
-                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 2}
+    exp_name = '2layers_noup_se1_temporal5_epochs15_saveit'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 15,
+                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 1}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
