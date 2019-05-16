@@ -248,8 +248,6 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
         curr_fold_dist = []
         curr_fold_pix = []
         for k, testfolder in enumerate(testdirs):
-            if k==0:
-                continue
             res_x, res_y = training_generator.resolution_df.loc[
                 training_generator.resolution_df['scan']
                 == testfolder, ['res_x', 'res_y']].values[0]
