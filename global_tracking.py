@@ -604,6 +604,7 @@ def train(traindirs, upsample, params_dict, checkpointdir, logger, validation_ge
     logger.info('Saving trained models to {}'.format(checkpoint_dir))
     model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
     dump(est_c1, os.path.join(checkpoint_dir, 'est_c1.joblib'))
+    dump(est_c2, os.path.join(checkpoint_dir, 'est_c2.joblib'))
     return model, est_c1, est_c2
 
 
