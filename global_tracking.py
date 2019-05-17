@@ -62,7 +62,7 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
     return c1, c2, old_c1, old_c2
 
 
-def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
+def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, upsample=True):
     eucl_dist_per_fold = []
     pixel_dist_per_fold = []
     for traindirs, testdirs in fold_iterator:
@@ -480,4 +480,4 @@ if __name__ == '__main__':
 
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     tf.keras.backend.set_session(sess)
-    run_global_cv(fold_iterator, logger, params_dict, upsample=False)
+    run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, upsample=False)
