@@ -790,8 +790,8 @@ def predict_feature(label_file, img_init,
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = '2layers_noup_se1_temporal5_epochs15_60'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 15,
+    exp_name = '2layers_noup_se1_temporal5_epochs50_60-NOJUMP'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 50,
                    'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 1}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
