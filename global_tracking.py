@@ -77,7 +77,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
             data_dir, testdirs, 32,
             width_template=params_dict['width'],
             type='val', upsample=upsample)
-        model, est_c1, est_c2 = train(traindirs, upsample,
+        model, est_c1, est_c2 = train(traindirs, data_dir, upsample,
                                       params_dict, checkpoint_dir,
                                       logger, validation_generator)
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
@@ -226,7 +226,7 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                         np.std(eucl_dist_per_fold)))
 
 
-def train(traindirs, upsample, params_dict, checkpointdir, logger, validation_gen=None):
+def train(traindirs, data_dir, upsample, params_dict, checkpointdir, logger, validation_gen=None):
     if logger is not None:
         logger.info('Training folders are {}'.format(traindirs))
     else:
