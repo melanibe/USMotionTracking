@@ -108,20 +108,20 @@ def create_model(img_size,
     CNN_1_1 = keras.layers.Conv2D(
         filters=h1, kernel_size=3, activation=tf.nn.relu)
     CNN_1_2 = keras.layers.Conv2D(
-        filters=h1, kernel_size=3, activation=tf.nn.relu)
+        filters=h1, kernel_size=3, activation=tf.nn.relu, padding='same')
     CNN_1_3 = keras.layers.Conv2D(
-        filters=h1, kernel_size=5, activation=tf.nn.relu, strides=3)
-    pool_1 = keras.layers.MaxPooling2D(pool_size=(2, 2))
+        filters=h1, kernel_size=3, activation=tf.nn.relu, strides=2)
+    # pool_1 = keras.layers.MaxPooling2D(pool_size=(2, 2))
     x = CNN_1_1(x)
     x_init = CNN_1_1(x_init)
     if use_batch_norm:
         x = batch_1_1(x)
         x_init = batch_1_1(x_init)
-   # x = CNN_1_2(x)
-    #x_init = CNN_1_2(x_init)
-    #if use_batch_norm:
-    #     x = batch_1_2(x)
-    #     x_init = batch_1_2(x_init)
+    x = CNN_1_2(x)
+    x_init = CNN_1_2(x_init)
+    if use_batch_norm:
+         x = batch_1_2(x)
+         x_init = batch_1_2(x_init)
     x = CNN_1_3(x)
     x_init = CNN_1_3(x_init)
     if use_batch_norm:
@@ -139,8 +139,8 @@ def create_model(img_size,
         CNN_2_2 = keras.layers.Conv2D(
             filters=h2, kernel_size=3, activation=tf.nn.relu, padding='same')
         CNN_2_3 = keras.layers.Conv2D(
-            filters=h2, kernel_size=5, activation=tf.nn.relu, strides=2)
-        pool_2 = keras.layers.MaxPooling2D(pool_size=(2, 2))
+            filters=h2, kernel_size=3, activation=tf.nn.relu, strides=2)
+        # pool_2 = keras.layers.MaxPooling2D(pool_size=(2, 2))
         batch_2_1 = keras.layers.BatchNormalization()
         batch_2_2 = keras.layers.BatchNormalization()
         batch_2_3 = keras.layers.BatchNormalization()
@@ -149,11 +149,11 @@ def create_model(img_size,
         if use_batch_norm:
             x = batch_2_1(x)
             x_init = batch_2_1(x_init)
-        #x = CNN_2_2(x)
-        #x_init = CNN_2_2(x_init)
-        #if use_batch_norm:
-        #     x = batch_2_2(x)
-        #     x_init = batch_2_2(x_init)
+        x = CNN_2_2(x)
+        x_init = CNN_2_2(x_init)
+        if use_batch_norm:
+             x = batch_2_2(x)
+             x_init = batch_2_2(x_init)
         x = CNN_2_3(x)
         x_init = CNN_2_3(x_init)
         if use_batch_norm:
@@ -169,10 +169,10 @@ def create_model(img_size,
         CNN_3_1 = keras.layers.Conv2D(
             filters=h3, kernel_size=3, activation=tf.nn.relu)
         CNN_3_2 = keras.layers.Conv2D(
-            filters=h3, kernel_size=3, activation=tf.nn.relu)
-        CNN_3_3 = keras.layers.Conv2D(
-            filters=h3, kernel_size=5, activation=tf.nn.relu, strides=2)
-        pool_3 = keras.layers.MaxPooling2D(pool_size=(2, 2))
+            filters=h3, kernel_size=3, activation=tf.nn.relu, padding='same')
+        #CNN_3_3 = keras.layers.Conv2D(
+        #    filters=h3, kernel_size=3, activation=tf.nn.relu, strides=2)
+        # pool_3 = keras.layers.MaxPooling2D(pool_size=(2, 2))
         batch_3_1 = keras.layers.BatchNormalization()
         batch_3_2 = keras.layers.BatchNormalization()
         batch_3_3 = keras.layers.BatchNormalization()
@@ -186,11 +186,11 @@ def create_model(img_size,
         if use_batch_norm:
             x = batch_3_2(x)
             x_init = batch_3_2(x_init)
-        x = CNN_3_3(x)
-        x_init = CNN_3_3(x_init)
-        if use_batch_norm:
-            x = batch_3_3(x)
-            x_init = batch_3_3(x_init)
+        #x = CNN_3_3(x)
+        #x_init = CNN_3_3(x_init)
+        #if use_batch_norm:
+        #    x = batch_3_3(x)
+        #    x_init = batch_3_3(x_init)
         #x = pool_3(x)
         #x_init = pool_3(x_init)
         if drop_out_rate > 0:

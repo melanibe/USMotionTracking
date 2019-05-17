@@ -21,20 +21,20 @@ CLUST Challenge
 
 def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                     params_dict, model, template_init, logger=None, est_c1=None, est_c2=None, c1_hist=None, c2_hist=None):
-    c1, c2, maxNCC = NCC_best_template_search(c1_prev,
-                                              c2_prev,
-                                              img_prev,
-                                              img_current,
-                                              width=params_dict['width'],
-                                              search_w=params_dict['search_w'])
-    xax, yax = find_template_pixel(c1, c2,
+    # c1, c2, maxNCC = NCC_best_template_search(c1_prev,
+    #                                           c2_prev,
+    #                                           img_prev,
+    #                                           img_current,
+    #                                           width=params_dict['width'],
+    #                                           search_w=params_dict['search_w'])
+    xax, yax = find_template_pixel(c1_prev, c2_prev,
                                    params_dict['width'], img_current.shape[1], img_current.shape[0])
     template_current = img_current[np.ravel(
         yax), np.ravel(xax)].reshape(1, len(yax), len(xax))
-    current_centers = np.asarray([c1, c2]).reshape(1, 2)
+    current_centers = np.asarray([c1_prev, c2_prev]).reshape(1, 2)
     pred = model.predict(
         x=[template_current, template_init, current_centers])
-    old_c1, old_c2 = c1, c2
+    old_c1, old_c2 = c1_prev, c2_prev
     c1, c2 = pred[0, 0], pred[0, 1]
     if est_c1 is not None:
         c1_temp = est_c1.predict(c1_hist.reshape(1, -1))
@@ -47,19 +47,19 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 logger.info('temp {}, {}'.format(c1_temp, c2_temp))
                 logger.info('net {}, {}'.format(c1, c2))
             c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
-    if (c1_prev-c1)>10 or (c2_prev-c2)>10:
+    if ((c1_prev-c1) > 10 or (c2_prev-c2) > 10):
         logger.info('WARN: absurd prediction')
         if est_c1 is not None:
-            if ((c1_prev-c1_temp)<5 and (c2_prev-c2_temp)<5):
+            if ((c1_prev-c1_temp) < 5 and (c2_prev-c2_temp) < 5):
                 logger.info('keep temporal')
                 c1, c2 = c1_temp, c2_temp
-        elif ((c1_prev-pred[0, 0])<5 and (c2_prev-pred[0, 1])<5):
+        elif ((c1_prev-pred[0, 0]) < 5 and (c2_prev-pred[0, 1]) < 5):
             logger.info('keep net')
             c1, c2 = pred[0, 0], pred[0, 1]
         else:
             logger.info('keep old')
             c1, c2 = c1_prev, c2_prev
-    return c1, c2, old_c1, old_c2, maxNCC
+    return c1, c2, old_c1, old_c2
 
 
 def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
@@ -84,10 +84,12 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
         curr_fold_dist = []
         curr_fold_pix = []
         for k, testfolder in enumerate(testdirs):
-            res_x, res_y = training_generator.resolution_df.loc[
-                training_generator.resolution_df['scan']
-                == testfolder, ['res_x', 'res_y']].values[0]
-
+            if upsample:
+                res_x, res_y = training_generator.resolution_df.loc[
+                    training_generator.resolution_df['scan']
+                    == testfolder, ['res_x', 'res_y']].values[0]
+            else:
+                res_x, res_y = None, None
             annotation_dir = os.path.join(data_dir, testfolder, 'Annotation')
             img_dir = os.path.join(data_dir, testfolder, 'Data')
             list_imgs = [os.path.join(img_dir, dI)
@@ -148,10 +150,10 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                     if i > 5:
                         tmp = list_centers[-10:].reshape(-1, 2)
                         assert tmp.shape[0] == 5
-                        c1, c2, old_c1, old_c2, maxNCC = get_next_center(
+                        c1, c2, old_c1, old_c2 = get_next_center(
                             c1, c2, img_prev, img_current, params_dict, model, template_init, logger, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
                     else:
-                        c1, c2, old_c1, old_c2, maxNCC = get_next_center(
+                        c1, c2, old_c1, old_c2 = get_next_center(
                             c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
                     # project back in init coords
                     if upsample:
@@ -175,16 +177,16 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
                             logger.info('ID {} : euclidean dist diff {}'
                                         .format(i, dist))
                         if dist > 10:
-                            logger.info(
-                                'Bad dist - maxNCC was {}'.format(maxNCC))
+                            # logger.info(
+                            #     'Bad dist - maxNCC was {}'.format(maxNCC))
                             logger.info('True {},{}'.format(true[0], true[1]))
                             logger.info('Pred {},{}'.format(
                                 c1_orig_coords, c2_orig_coords))
                             if upsample:
-                                logger.info('NCC {},{}'.format(
+                                logger.info('Previous {},{}'.format(
                                     old_c1*0.4/res_x, old_c2*0.4/res_y))
                             else:
-                                logger.info('NCC {},{}'.format(
+                                logger.info('Previous {},{}'.format(
                                     old_c1, old_c2))
                 idx = df.id.values.astype(int)
                 list_centers = list_centers.reshape(-1, 2)
@@ -229,7 +231,7 @@ def train(traindirs, upsample, params_dict, checkpointdir, logger, validation_ge
     training_generator = DataLoader(
         data_dir, traindirs, 32,
         width_template=params_dict['width'], upsample=upsample)
-    earl = keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+    earl = keras.callbacks.EarlyStopping(monitor='val_loss', patience=3)
     # Design model
     model = create_model(params_dict['width']+1,
                          params_dict['h1'],
@@ -342,8 +344,10 @@ def predict(testdirs, checkpoint_dir, resolution_df, data_dir, upsample, params_
     est_c1 = load(os.path.join(checkpoint_dir, 'est_c1.joblib'))
     est_c2 = load(os.path.join(checkpoint_dir, 'est_c2.joblib'))
     for k, testfolder in enumerate(testdirs):
-        res_x, res_y = resolution_df.loc[resolution_df['scan']
-                                         == testfolder, ['res_x', 'res_y']].values[0]
+        res_x, res_y = None, None
+        if upsample:
+            res_x, res_y = resolution_df.loc[resolution_df['scan']
+                                            == testfolder, ['res_x', 'res_y']].values[0]
         annotation_dir = os.path.join(data_dir, testfolder, 'Annotation')
         img_dir = os.path.join(data_dir, testfolder, 'Data')
         list_imgs = [os.path.join(img_dir, dI)
@@ -424,85 +428,11 @@ def predict(testdirs, checkpoint_dir, resolution_df, data_dir, upsample, params_
             pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
                 label_file)), header=False, index=False)
 
-
-def predict_feature(label_file, img_init,
-                    img_dir, res_x, res_y, model, annotation_dir,
-                    params_dict, checkpoint_dir, upsample,
-                    limit=None, est_c1=None, est_c2=None):
-    if limit is None:
-        list_imgs = [os.path.join(img_dir, dI)
-                     for dI in os.listdir(img_dir)
-                     if (dI.endswith('png')
-                         and not dI.startswith('.'))]
-        n_obs = len(list_imgs)
-    else:
-        n_obs = limit
-    df = pd.read_csv(os.path.join(annotation_dir, label_file),
-                     header=None,
-                     names=['id', 'x', 'y'],
-                     sep='\s+')
-    c1_init, c2_init = df.loc[df['id'] == 1, [
-        'x', 'y']].values[0, :]
-    print(c1_init, c2_init)
-    if upsample:
-        xax, yax = find_template_pixel(c1_init*res_x/0.4, c2_init*res_y/0.4,
-                                       width=params_dict['width'], max_x=img_init.shape[1], max_y=img_init.shape[0])
-    else:
-        xax, yax = find_template_pixel(c1_init, c2_init,
-                                       width=params_dict['width'], max_x=img_init.shape[1], max_y=img_init.shape[0])
-    template_init = img_init[np.ravel(yax), np.ravel(
-        xax)].reshape(1, len(yax), len(xax))
-    img_current = img_init
-    list_centers = [[c1_init, c2_init]]
-    if upsample:
-        c1 = c1_init*res_x/0.4
-        c2 = c2_init*res_y/0.4
-    else:
-        c1 = c1_init
-        c2 = c2_init
-    for i in range(2, n_obs):
-        if i % 50 == 0:
-            print(i)
-        img_prev = img_current
-        try:
-            img_current = np.asarray(Image.open(
-                os.path.join(img_dir, "{:04d}.png".format(i))))
-        except FileNotFoundError:
-            img_current = np.asarray(Image.open(
-                os.path.join(img_dir, "{:05d}.png".format(i))))
-        img_current = prepare_input_img(img_current, res_x, res_y, upsample)
-        if ((est_c1 is None) or (i <= 10)):  # during training
-            c1, c2, old_c1, old_c2, maxNCC = get_next_center(
-                c1, c2, img_prev, img_current, params_dict, model, template_init)
-        else:  # at test time use the trained temporal estimator
-            tmp = list_centers[-20:].reshape(-1, 2)
-            c1, c2, old_c1, old_c2, maxNCC = get_next_center(
-                c1, c2, img_prev, img_current, params_dict, model, template_init,
-                est_c1, est_c2, tmp[:, 0], tmp[:, 1])
-        # project back in init coords
-        if upsample:
-            c1_orig_coords, c2_orig_coords = c1*0.4/res_x, c2*0.4/res_y
-        else:
-            c1_orig_coords, c2_orig_coords = c1, c2
-        list_centers = np.append(
-            list_centers, [c1_orig_coords, c2_orig_coords])
-        list_centers = list_centers.reshape(-1, 2)
-    pred_df = pd.DataFrame()
-    pred_df['id'] = np.arange(1, len(list_centers)+1)
-    pred_df['c1'] = list_centers[:, 0]
-    pred_df['c2'] = list_centers[:, 1]
-    if limit is None:
-        pred_df.to_csv(os.path.join(checkpoint_dir, '{}'.format(
-            label_file)), header=False, index=False)
-    print('{} DONE'.format(label_file))
-    return pred_df
-
-
 if __name__ == '__main__':
     np.random.seed(seed=42)
     exp_name = '2layers_noup_se1_temporal5_epochs50_60-NOJUMP'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 50,
-                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 1}
+                   'h3': 32, 'embed_size': 256, 'width': 60, 'search_w': 1}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
