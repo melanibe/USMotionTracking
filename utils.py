@@ -1,5 +1,6 @@
 import logging
-
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 '''
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
