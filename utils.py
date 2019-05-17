@@ -40,3 +40,16 @@ def get_default_params(params_dict):
     if params_dict.get('use_batchnorm') is None:
         params_dict['use_batchnorm'] = True
     return params_dict
+
+def plot_img_template(c1,c2,img, width=50, height=50):
+    x = c1 - width/2
+    y = c2 - height/2
+    # Create figure and axes
+    fig,ax = plt.subplots(1)
+
+    # Display the image
+    ax.imshow(img, cmap='gray', vmin=0, vmax=255)
+    ax.scatter(c1-1, c2-1, s=10)
+    rect=Rectangle((x,y), width, height, fill=False)
+    ax.add_patch(rect)
+    plt.show()

@@ -227,7 +227,10 @@ def run_global_cv(fold_iterator, logger, params_dict, upsample=True):
 
 
 def train(traindirs, upsample, params_dict, checkpointdir, logger, validation_gen=None):
-    logger.info('Training folders are {}'.format(traindirs))
+    if logger is not None:
+        logger.info('Training folders are {}'.format(traindirs))
+    else:
+        print('Training folders are {}'.format(traindirs))
     training_generator = DataLoader(
         data_dir, traindirs, 32,
         width_template=params_dict['width'], upsample=upsample)
@@ -253,11 +256,18 @@ def train(traindirs, upsample, params_dict, checkpointdir, logger, validation_ge
                             use_multiprocessing=True,
                             epochs=params_dict['n_epochs'],
                             workers=4, max_queue_size=20)
-    logger.info('Local Net trained')
-    logger.info('earl.stopped_epoch')
+    if logger is not None:
+        logger.info('Local Net trained')
+        logger.info('Stopped epoch {}'.format(earl.stopped_epoch))
+    else:
+        print('Local Net trained')
+        print('Stopped epoch {}'.format(earl.stopped_epoch))        
     # Train the temporal model
     for folder in traindirs:
-        logger.info('Getting temporal training set for {}'.format(folder))
+        if logger is not None:
+            logger.info('Getting temporal training set for {}'.format(folder))
+        else:
+            print('Getting temporal training set for {}'.format(folder))
         res_x, res_y = training_generator.resolution_df.loc[
             training_generator.resolution_df['scan']
             == folder, ['res_x', 'res_y']].values[0]
@@ -312,27 +322,36 @@ def train(traindirs, upsample, params_dict, checkpointdir, logger, validation_ge
     c2_label = Y5
     est_c1 = RidgeCV()
     est_c2 = RidgeCV()
-    logger.info('c1')
     scores_c1 = cross_validate(est_c1, fullX, c1_label, cv=5, scoring=(
         'r2', 'neg_mean_squared_error'))
-    logger.info(scores_c1['test_neg_mean_squared_error'])
-    logger.info('c2')
     scores_c2 = cross_validate(est_c2, fullY, c2_label, cv=5, scoring=(
         'r2', 'neg_mean_squared_error'))
-    logger.info(scores_c2['test_neg_mean_squared_error'])
+    if logger is not None:
+        logger.info('c1')
+        logger.info(scores_c1['test_neg_mean_squared_error'])
+        logger.info('c2')
+        logger.info(scores_c2['test_neg_mean_squared_error'])
+    else:
+        print('c1')
+        print(scores_c1['test_neg_mean_squared_error'])
+        print('c2')
+        print(scores_c2['test_neg_mean_squared_error'])        
     # Fit on the whole training set
     est_c1.fit(fullX, c1_label)
     est_c2.fit(fullY, c2_label)
 
     # Save the local Net and the temporal model
-    logger.info('Saving trained models to {}'.format(checkpoint_dir))
+    if logger is not None:
+        logger.info('Saving trained models to {}'.format(checkpoint_dir))
+    else:
+        print('Saving trained models to {}'.format(checkpoint_dir))
     model.save_weights(os.path.join(checkpoint_dir, 'model.h5'))
     dump(est_c1, os.path.join(checkpoint_dir, 'est_c1.joblib'))
     dump(est_c2, os.path.join(checkpoint_dir, 'est_c2.joblib'))
     return model, est_c1, est_c2
 
 
-def predict(testdirs, checkpoint_dir, resolution_df, data_dir, upsample, params_dict):
+def predict(testdirs, checkpoint_dir, data_dir, params_dict, upsample=False, resolution_df=None):
     model = create_model(params_dict['width']+1,
                          params_dict['h1'],
                          params_dict['h2'],
@@ -343,7 +362,7 @@ def predict(testdirs, checkpoint_dir, resolution_df, data_dir, upsample, params_
     model.load_weights(os.path.join(checkpoint_dir, 'model.h5'))
     est_c1 = load(os.path.join(checkpoint_dir, 'est_c1.joblib'))
     est_c2 = load(os.path.join(checkpoint_dir, 'est_c2.joblib'))
-    for k, testfolder in enumerate(testdirs):
+    for testfolder in testdirs:
         res_x, res_y = None, None
         if upsample:
             res_x, res_y = resolution_df.loc[resolution_df['scan']
@@ -406,10 +425,10 @@ def predict(testdirs, checkpoint_dir, resolution_df, data_dir, upsample, params_
                 if i > 5:
                     tmp = list_centers[-10:].reshape(-1, 2)
                     assert tmp.shape[0] == 5
-                    c1, c2, old_c1, old_c2, maxNCC = get_next_center(
+                    c1, c2, old_c1, old_c2 = get_next_center(
                         c1, c2, img_prev, img_current, params_dict, model, template_init, logger, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
                 else:
-                    c1, c2, old_c1, old_c2, maxNCC = get_next_center(
+                    c1, c2, old_c1, old_c2 = get_next_center(
                         c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
                 # project back in init coords
                 if upsample:
@@ -426,7 +445,7 @@ def predict(testdirs, checkpoint_dir, resolution_df, data_dir, upsample, params_
             pred_df['c1'] = list_centers[:, 0]
             pred_df['c2'] = list_centers[:, 1]
             pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
-                label_file)), header=False, index=False)
+                label_file)), header=False, index=False, sep='\s')
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
