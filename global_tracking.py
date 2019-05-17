@@ -47,6 +47,18 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 logger.info('temp {}, {}'.format(c1_temp, c2_temp))
                 logger.info('net {}, {}'.format(c1, c2))
             c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
+    if (c1_prev-c1)>10 or (c2_prev-c2)>10:
+        logger.info('WARN: absurd prediction')
+        if est_c1 is not None:
+            if ((c1_prev-c1_temp)<5 and (c2_prev-c2_temp)<5):
+                logger.info('keep temporal')
+                c1, c2 = c1_temp, c2_temp
+        elif ((c1_prev-pred[0, 0])<5 and (c2_prev-pred[0, 1])<5):
+            logger.info('keep net')
+            c1, c2 = pred[0, 0], pred[0, 1]
+        else:
+            logger.info('keep old')
+            c1, c2 = c1_prev, c2_prev
     """
     if maxNCC < 0.85:
         logger.info('WARN WARN MAX NCC {}'.format(maxNCC))
