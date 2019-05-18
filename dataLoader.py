@@ -197,8 +197,8 @@ class DataLoader(keras.utils.Sequence):
         print(len(self.orig_labels_x))
         self.indexes = np.arange(len(self.orig_labels_x))
         if type == 'train':
-            self.u_x_list = np.random.randn(len(self.orig_labels_y))*5
-            self.u_y_list = np.random.randn(len(self.orig_labels_y))*5
+            self.u_x_list = np.random.randn(len(self.orig_labels_y))*10
+            self.u_y_list = np.random.randn(len(self.orig_labels_y))*10
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
 
