@@ -46,19 +46,23 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 logger.info('WARN: using temporal pred')
                 logger.info('temp {}, {}'.format(c1_temp, c2_temp))
                 logger.info('net {}, {}'.format(c1, c2))
-            c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
-    if ((c1_prev-c1) > 10 or (c2_prev-c2) > 10):
+            #c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
+            c1_net , c2_net = c1, c2
+            c1, c2 = c1_temp, c2_temp
+    if ((np.abs(c1_prev-c1) > 5) or (np.abs(c2_prev-c2) > 5)):
         logger.info('WARN: absurd prediction')
         if est_c1 is not None:
-            if ((c1_prev-c1_temp) < 5 and (c2_prev-c2_temp) < 5):
+            if ((np.abs(c1_prev-c1_temp) < 3) and (np.abs(c2_prev-c2_temp) < 3)):
                 logger.info('keep temporal')
                 c1, c2 = c1_temp, c2_temp
-        elif ((c1_prev-pred[0, 0]) < 5 and (c2_prev-pred[0, 1]) < 5):
-            logger.info('keep net')
-            c1, c2 = pred[0, 0], pred[0, 1]
+            elif ((np.abs(c1_prev-c1_net) < 3) and (np.abs(c2_prev-c2_net)<3)):
+                logger.info('keep net')
+                c1, c2 = c1_net, c2_net
         else:
             logger.info('keep old')
             c1, c2 = c1_prev, c2_prev
+    assert (np.abs(c1-c1_prev)<5)
+    assert (np.abs(c2-c2_prev)<5)
     return c1, c2, old_c1, old_c2
 
 
@@ -84,12 +88,9 @@ def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, 
         curr_fold_dist = []
         curr_fold_pix = []
         for k, testfolder in enumerate(testdirs):
-            if upsample:
-                res_x, res_y = training_generator.resolution_df.loc[
+            res_x, res_y = training_generator.resolution_df.loc[
                     training_generator.resolution_df['scan']
                     == testfolder, ['res_x', 'res_y']].values[0]
-            else:
-                res_x, res_y = None, None
             annotation_dir = os.path.join(data_dir, testfolder, 'Annotation')
             img_dir = os.path.join(data_dir, testfolder, 'Data')
             list_imgs = [os.path.join(img_dir, dI)
@@ -449,9 +450,9 @@ def predict(testdirs, checkpoint_dir, data_dir, params_dict, upsample=False, res
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = '2layers_noup_se1_temporal5_epochs50_60-NOJUMP'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 50,
-                   'h3': 32, 'embed_size': 256, 'width': 60, 'search_w': 1}
+    exp_name = 'final_temporal5_epochs25_60-NOJUMP5'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
+                   'h3': 0, 'embed_size': 128, 'width': 60, 'search_w': 1}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
