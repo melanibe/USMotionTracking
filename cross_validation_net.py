@@ -139,9 +139,9 @@ def run_cv(fold_iterator, logger, params_dict, upsample=True):
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'new_cv_alone_2layers_25_up'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 10,
-                   'h3': 0, 'embed_size': 256, 'width': 100, 'search_w': 50}
+    exp_name = 'cv_25_0_64_50'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
+                   'h3':0, 'embed_size': 64, 'width': 50, 'search_w': 50}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')
