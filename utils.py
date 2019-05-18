@@ -50,7 +50,7 @@ def plot_img_template(c1,c2,img, width=50, height=50):
 
     # Display the image
     ax.imshow(img, cmap='gray', vmin=0, vmax=255)
-    ax.scatter(c1-1, c2-1, s=10)
+    ax.scatter(c1-1, c2-1, s=10, color='red')
     rect=Rectangle((x,y), width, height, fill=False)
     ax.add_patch(rect)
     plt.show()

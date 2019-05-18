@@ -19,8 +19,8 @@ CLUST Challenge
 '''
 
 
-def get_next_center(c1_prev, c2_prev, img_prev, img_current,
-                    params_dict, model, template_init, logger=None, est_c1=None, est_c2=None, c1_hist=None, c2_hist=None):
+def get_next_center(k, stop_temporal, c1_prev, c2_prev, img_prev, img_current,
+                    params_dict, model, template_init, c1_init, c2_init, logger=None, est_c1=None, est_c2=None, c1_hist=None, c2_hist=None):
     # c1, c2, maxNCC = NCC_best_template_search(c1_prev,
     #                                           c2_prev,
     #                                           img_prev,
@@ -36,7 +36,8 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
         x=[template_current, template_init, current_centers])
     old_c1, old_c2 = c1_prev, c2_prev
     c1, c2 = pred[0, 0], pred[0, 1]
-    if est_c1 is not None:
+    c1_net , c2_net = c1, c2
+    if est_c1 is not None and not stop_temporal:
         c1_temp = est_c1.predict(c1_hist.reshape(1, -1))
         c2_temp = est_c2.predict(c2_hist.reshape(1, -1))
         if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 5:
@@ -44,26 +45,26 @@ def get_next_center(c1_prev, c2_prev, img_prev, img_current,
                 print('WARN: using temporal pred')
             else:
                 logger.info('WARN: using temporal pred')
-                logger.info('temp {}, {}'.format(c1_temp, c2_temp))
-                logger.info('net {}, {}'.format(c1, c2))
-            #c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
-            c1_net , c2_net = c1, c2
-            c1, c2 = c1_temp, c2_temp
-    if ((np.abs(c1_prev-c1) > 5) or (np.abs(c2_prev-c2) > 5)):
-        logger.info('WARN: absurd prediction')
-        if est_c1 is not None:
-            if ((np.abs(c1_prev-c1_temp) < 3) and (np.abs(c2_prev-c2_temp) < 3)):
-                logger.info('keep temporal')
-                c1, c2 = c1_temp, c2_temp
-            elif ((np.abs(c1_prev-c1_net) < 3) and (np.abs(c2_prev-c2_net)<3)):
-                logger.info('keep net')
-                c1, c2 = c1_net, c2_net
-        else:
-            logger.info('keep old')
-            c1, c2 = c1_prev, c2_prev
-    assert (np.abs(c1-c1_prev)<5)
-    assert (np.abs(c2-c2_prev)<5)
-    return c1, c2, old_c1, old_c2
+                #logger.info('temp {}, {}'.format(c1_temp, c2_temp))
+                #logger.info('net {}, {}'.format(c1, c2))
+            c1, c2 = np.mean([c1_temp, c1]), np.mean([c2_temp, c2])
+    if ((np.abs(c1-c1_init) > 30) or (np.abs(c2-c2_init) > 30)):
+        k += 1
+    else:
+        k = 0
+    if (k>20):
+        logger.info('WARN: absurd prediction - remove temporal model')
+        stop_temporal = True
+        logger.info('keep init')
+        c1, c2 = c1_init, c2_init
+        k = 0
+    try:
+        assert (np.abs(c1-c1_prev)<6)
+        assert (np.abs(c2-c2_prev)<6)
+    except AssertionError:
+        print(np.abs(c1-c1_prev))
+        print(np.abs(c2-c2_prev))
+    return c1, c2, old_c1, old_c2, stop_temporal, k
 
 
 def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, upsample=True):
@@ -80,10 +81,22 @@ def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, 
         validation_generator = DataLoader(
             data_dir, testdirs, 32,
             width_template=params_dict['width'],
-            type='val', upsample=upsample)
+            type='val', upsample=upsample)   
         model, est_c1, est_c2 = train(traindirs, data_dir, upsample,
                                       params_dict, checkpoint_dir,
                                       logger, validation_generator)
+        """
+        model = create_model(params_dict['width']+1,
+                         params_dict['h1'],
+                         params_dict['h2'],
+                         params_dict['h3'],
+                         embed_size=params_dict['embed_size'],
+                         drop_out_rate=params_dict['dropout_rate'],
+                         use_batch_norm=params_dict['use_batchnorm'])
+        model.load_weights(os.path.join(checkpoint_dir, 'model.h5'))
+        est_c1 = load(os.path.join(checkpoint_dir, 'est_c1.joblib'))
+        est_c2 = load(os.path.join(checkpoint_dir, 'est_c2.joblib'))
+        """
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
         curr_fold_dist = []
         curr_fold_pix = []
@@ -136,6 +149,8 @@ def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, 
                 template_init = img_init[np.ravel(yax), np.ravel(
                     xax)].reshape(1, len(yax), len(xax))
                 c1, c2 = c1_init, c2_init
+                stop_temporal = False
+                k = 0 
                 for i in range(2, len(list_imgs)+1):
                     if i % 100 == 0:
                         print(i)
@@ -151,11 +166,11 @@ def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, 
                     if i > 5:
                         tmp = list_centers[-10:].reshape(-1, 2)
                         assert tmp.shape[0] == 5
-                        c1, c2, old_c1, old_c2 = get_next_center(
-                            c1, c2, img_prev, img_current, params_dict, model, template_init, logger, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
+                        c1, c2, old_c1, old_c2, stop_temporal, k = get_next_center(k, stop_temporal,
+                            c1, c2, img_prev, img_current, params_dict, model, template_init, c1_init, c2_init, logger, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
                     else:
-                        c1, c2, old_c1, old_c2 = get_next_center(
-                            c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
+                        c1, c2, old_c1, old_c2, stop_temporal, k  = get_next_center(k, stop_temporal,
+                            c1, c2, img_prev, img_current, params_dict, model, template_init, c1_init, c2_init, logger)
                     # project back in init coords
                     if upsample:
                         c1_orig_coords = c1*0.4/res_x
