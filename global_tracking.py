@@ -40,7 +40,7 @@ def get_next_center(k, stop_temporal, c1_prev, c2_prev, img_prev, img_current,
     if est_c1 is not None and not stop_temporal:
         c1_temp = est_c1.predict(c1_hist.reshape(1, -1))
         c2_temp = est_c2.predict(c2_hist.reshape(1, -1))
-        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 5:
+        if np.sqrt((c1_temp-c1)**2+(c2_temp-c2)**2) > 1000:
             if logger is None:
                 print('WARN: using temporal pred')
             else:
@@ -52,7 +52,7 @@ def get_next_center(k, stop_temporal, c1_prev, c2_prev, img_prev, img_current,
         k += 1
     else:
         k = 0
-    if (k>20):
+    if (k>50):
         logger.info('WARN: absurd prediction - remove temporal model')
         stop_temporal = True
         logger.info('keep init')
@@ -465,9 +465,9 @@ def predict(testdirs, checkpoint_dir, data_dir, params_dict, upsample=False, res
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'final_temporal5_epochs25_60-NOJUMP5'
-    params_dict = {'dropout_rate': 0.5, 'n_epochs': 25,
-                   'h3': 0, 'embed_size': 128, 'width': 60, 'search_w': 1}
+    exp_name = 'final50_notemporal_epochs15_60-NOJUMP5'
+    params_dict = {'dropout_rate': 0.5, 'n_epochs': 15,
+                   'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 1}
 
     # ============ DATA AND SAVING DIRS SETUP ========== #
     data_dir = os.getenv('DATA_PATH')

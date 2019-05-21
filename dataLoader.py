@@ -173,8 +173,8 @@ class DataLoader(keras.utils.Sequence):
         print(self.list_imgs.shape)
         print(self.orig_labels_x.shape)
         self.shuffle = shuffle
-        self.u_x_list = np.random.randn(len(self.orig_labels_x))*10
-        self.u_y_list = np.random.randn(len(self.orig_labels_y))*10
+        self.u_x_list = np.random.randn(len(self.orig_labels_x))*5
+        self.u_y_list = np.random.randn(len(self.orig_labels_y))*5
         if self.type == 'val':
             self.shuffle = False  # don't shuffle if test set.
         self.on_epoch_end()
@@ -197,8 +197,8 @@ class DataLoader(keras.utils.Sequence):
         print(len(self.orig_labels_x))
         self.indexes = np.arange(len(self.orig_labels_x))
         if type == 'train':
-            self.u_x_list = np.random.randn(len(self.orig_labels_y))*10
-            self.u_y_list = np.random.randn(len(self.orig_labels_y))*10
+            self.u_x_list = np.random.randn(len(self.orig_labels_y))*5
+            self.u_y_list = np.random.randn(len(self.orig_labels_y))*5
         if self.shuffle == True:
             np.random.shuffle(self.indexes)
 
