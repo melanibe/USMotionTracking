@@ -10,7 +10,7 @@ CUDA_HOME=/scratch_net/biwidl202/melanibe/apps/cuda-9.0
 ##$-V
 
 ## <= 1h is short queue, <= 6h is middle queue, <= 48h is long queue
-#$ -q gpu.middle.q@*
+#$ -q gpu.24h.q@*
 
 ## The maximum memory usage of this job (below 4G does not make much sense)
 #$ -l gpu
@@ -22,7 +22,7 @@ CUDA_HOME=/scratch_net/biwidl202/melanibe/apps/cuda-9.0
 ##$ -j y
 #
 # logging directory, preferably on your scratch
-#$ -o /scratch_net/biwidl202/melanibe/logs
+##$ -o /scratch_net/biwidl202/melanibe/logs
 #
 
 
@@ -36,6 +36,7 @@ export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$CUDA_HOME/extras/CUPTI/lib64:$LD_LIBRAR
 export DATA_PATH='/scratch_net/biwidl202_second/melanibe/CLUST/CLUST_Data'
 export EXP_PATH='/scratch_net/biwidl202_second/melanibe/CLUST/CLUST_Runs'
 source /scratch_net/biwidl202/melanibe/anaconda3/bin/activate
-CUDA_VISIBLE_DEVICES=$SGE_GPU python global_tracking.py
+python global_tracking.py
+
 
 
