@@ -465,7 +465,7 @@ def predict(testdirs, checkpoint_dir, data_dir, params_dict, upsample=False, res
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
-    exp_name = 'final50_notemporal_epochs15_60-NOJUMP5'
+    exp_name = 'FINAL_temporal2_epochs15_60-NOJUMP5'
     params_dict = {'dropout_rate': 0.5, 'n_epochs': 15,
                    'h3': 0, 'embed_size': 256, 'width': 60, 'search_w': 1}
 
@@ -490,10 +490,15 @@ if __name__ == '__main__':
     logger.info('Saving checkpoint to {}'.format(checkpoint_dir))
 
     # KFold iterator
-    kf = MyKFold(data_dir, n_splits=5)
-    fold_iterator = kf.getFolderIterator()
+    listdir = np.asarray([dI for dI in os.listdir(data_dir) if (
+            os.path.isdir(os.path.join(data_dir, dI))
+            and not dI == 'feats_matrices')])
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.666)
-
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     tf.keras.backend.set_session(sess)
+    train(listdir, data_dir, False, params_dict, checkpoint_dir, logger, None)
+    '''
+    kf = MyKFold(data_dir, n_splits=5)
+    fold_iterator = kf.getFolderIterator()
     run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, upsample=False)
+    '''
