@@ -1,8 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from train_local_tracking import get_all_local_features
 
 '''
 Mélanie Bernhardt - ETH Zurich

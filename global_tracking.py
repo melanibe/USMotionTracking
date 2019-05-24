@@ -19,14 +19,8 @@ CLUST Challenge
 '''
 
 
-def get_next_center(k, stop_temporal, c1_prev, c2_prev, img_prev, img_current,
+def get_next_center(k, stop_temporal, c1_prev, c2_prev, img_current,
                     params_dict, model, template_init, c1_init, c2_init, logger=None, est_c1=None, est_c2=None, c1_hist=None, c2_hist=None):
-    # c1, c2, maxNCC = NCC_best_template_search(c1_prev,
-    #                                           c2_prev,
-    #                                           img_prev,
-    #                                           img_current,
-    #                                           width=params_dict['width'],
-    #                                           search_w=params_dict['search_w'])
     xax, yax = find_template_pixel(c1_prev, c2_prev,
                                    params_dict['width'], img_current.shape[1], img_current.shape[0])
     template_current = img_current[np.ravel(
@@ -34,9 +28,7 @@ def get_next_center(k, stop_temporal, c1_prev, c2_prev, img_prev, img_current,
     current_centers = np.asarray([c1_prev, c2_prev]).reshape(1, 2)
     pred = model.predict(
         x=[template_current, template_init, current_centers])
-    old_c1, old_c2 = c1_prev, c2_prev
     c1, c2 = pred[0, 0], pred[0, 1]
-    c1_net , c2_net = c1, c2
     if est_c1 is not None and not stop_temporal:
         c1_temp = est_c1.predict(c1_hist.reshape(1, -1))
         c2_temp = est_c2.predict(c2_hist.reshape(1, -1))
@@ -52,10 +44,12 @@ def get_next_center(k, stop_temporal, c1_prev, c2_prev, img_prev, img_current,
         k += 1
     else:
         k = 0
-    if (k>50):
-        logger.info('WARN: absurd prediction - remove temporal model')
+    if ((k>50)
+    or (c1 > img_current.shape[1]) or (c2> img_current.shape[0])
+    or (c1 < 0) or (c2<0)):
+        #logger.info('WARN: absurd prediction - remove temporal model')
         stop_temporal = True
-        logger.info('keep init')
+        #logger.info('keep init')
         c1, c2 = c1_init, c2_init
         k = 0
     try:
@@ -64,7 +58,7 @@ def get_next_center(k, stop_temporal, c1_prev, c2_prev, img_prev, img_current,
     except AssertionError:
         print(np.abs(c1-c1_prev))
         print(np.abs(c2-c2_prev))
-    return c1, c2, old_c1, old_c2, stop_temporal, k
+    return c1, c2, stop_temporal, k
 
 
 def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, upsample=True):
@@ -166,10 +160,10 @@ def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, 
                     if i > 5:
                         tmp = list_centers[-10:].reshape(-1, 2)
                         assert tmp.shape[0] == 5
-                        c1, c2, old_c1, old_c2, stop_temporal, k = get_next_center(k, stop_temporal,
+                        c1, c2, stop_temporal, k = get_next_center(k, stop_temporal,
                             c1, c2, img_prev, img_current, params_dict, model, template_init, c1_init, c2_init, logger, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
                     else:
-                        c1, c2, old_c1, old_c2, stop_temporal, k  = get_next_center(k, stop_temporal,
+                        c1, c2, stop_temporal, k  = get_next_center(k, stop_temporal,
                             c1, c2, img_prev, img_current, params_dict, model, template_init, c1_init, c2_init, logger)
                     # project back in init coords
                     if upsample:
@@ -198,12 +192,6 @@ def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, 
                             logger.info('True {},{}'.format(true[0], true[1]))
                             logger.info('Pred {},{}'.format(
                                 c1_orig_coords, c2_orig_coords))
-                            if upsample:
-                                logger.info('Previous {},{}'.format(
-                                    old_c1*0.4/res_x, old_c2*0.4/res_y))
-                            else:
-                                logger.info('Previous {},{}'.format(
-                                    old_c1, old_c2))
                 idx = df.id.values.astype(int)
                 list_centers = list_centers.reshape(-1, 2)
                 df_preds = list_centers[idx-1]
@@ -426,10 +414,11 @@ def predict(testdirs, checkpoint_dir, data_dir, params_dict, upsample=False, res
             template_init = img_init[np.ravel(yax), np.ravel(
                 xax)].reshape(1, len(yax), len(xax))
             c1, c2 = c1_init, c2_init
+            k=0
+            stop_temporal=False
             for i in range(2, len(list_imgs)+1):
                 if i % 100 == 0:
                     print(i)
-                img_prev = img_current
                 try:
                     img_current = np.asarray(Image.open(
                         os.path.join(img_dir, "{:04d}.png".format(i))))
@@ -441,11 +430,11 @@ def predict(testdirs, checkpoint_dir, data_dir, params_dict, upsample=False, res
                 if i > 5:
                     tmp = list_centers[-10:].reshape(-1, 2)
                     assert tmp.shape[0] == 5
-                    c1, c2, old_c1, old_c2 = get_next_center(
-                        c1, c2, img_prev, img_current, params_dict, model, template_init, logger, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
+                    c1, c2, stop_temporal, k = get_next_center(k, stop_temporal,
+                        c1, c2, img_current, params_dict, model, template_init, c1_init, c2_init, None, est_c1, est_c2, tmp[:, 0], tmp[:, 1])
                 else:
-                    c1, c2, old_c1, old_c2 = get_next_center(
-                        c1, c2, img_prev, img_current, params_dict, model, template_init, logger)
+                    c1, c2, stop_temporal, k  = get_next_center(k, stop_temporal,
+                        c1, c2, img_current, params_dict, model, template_init, c1_init, c2_init, None)
                 # project back in init coords
                 if upsample:
                     c1_orig_coords = c1*0.4/res_x
@@ -461,7 +450,7 @@ def predict(testdirs, checkpoint_dir, data_dir, params_dict, upsample=False, res
             pred_df['c1'] = list_centers[:, 0]
             pred_df['c2'] = list_centers[:, 1]
             pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
-                label_file)), header=False, index=False, sep='\s')
+                label_file)), header=False, index=False)
 
 if __name__ == '__main__':
     np.random.seed(seed=42)
