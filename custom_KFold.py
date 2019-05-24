@@ -5,6 +5,10 @@ import pandas as pd
 '''
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
+
+
+Class defining the across-sequences CV used for the report 
+and model tuning.
 '''
 
 class MyKFold:

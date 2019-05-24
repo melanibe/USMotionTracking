@@ -12,6 +12,8 @@ import parmap
 '''
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
+
+Defines the DataLoader and the pre-processing functions.
 '''
 def return_orig_pairs(idx, df, data_dir, subfolder):
     init_c1, init_c2 = df.x_newres.values[0], df.y_newres.values[0]

@@ -4,6 +4,9 @@ import parmap
 ''' 
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
+
+Defines the functions used in the first version of the project
+with 2 steps approach. 
 '''
 
 

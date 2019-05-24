@@ -4,17 +4,14 @@ from matplotlib.patches import Rectangle
 '''
 Mélanie Bernhardt - ETH Zurich
 CLUST Challenge
+
+Helper functions file
 '''
 
 def get_logger(checkpoint_dir):
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger('my_log')
-    # create console handler and set level to debug
     ch = logging.StreamHandler()
-    # create formatter
-    # formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    # ch.setFormatter(formatter)
-    # add ch to logger
     logger.addHandler(ch)
     log_filename = checkpoint_dir + '/logfile' + '.log'
     file_handler = logging.FileHandler(log_filename)
@@ -47,7 +44,6 @@ def plot_img_template(c1,c2,img, width=50, height=50):
     y = c2 - height/2
     # Create figure and axes
     fig,ax = plt.subplots(1)
-
     # Display the image
     ax.imshow(img, cmap='gray', vmin=0, vmax=255)
     ax.scatter(c1-1, c2-1, s=10, color='red')

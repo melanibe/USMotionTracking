@@ -3,19 +3,23 @@ from network import create_model
 import os
 import numpy as np
 from custom_KFold import MyKFold
-from block_matching_utils import find_template_pixel, NCC_best_template_search
+from block_matching_utils import find_template_pixel
 from PIL import Image
 import pandas as pd
 from tensorflow import keras
 from utils import get_logger, get_default_params
 import tensorflow as tf
-import parmap
 from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import cross_validate
 from joblib import dump, load
+
 '''
 Mélanie Bernhardt - ETH Zurich
-CLUST Challenge
+CLUST Challenge - May 2019
+
+This file defines the main functions of the project: getting the next prediction 
+combining the models, train the models, saving the predictions for submission
+on the test set.
 '''
 
 
@@ -79,18 +83,6 @@ def run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, 
         model, est_c1, est_c2 = train(traindirs, data_dir, upsample,
                                       params_dict, checkpoint_dir,
                                       logger, validation_generator)
-        """
-        model = create_model(params_dict['width']+1,
-                         params_dict['h1'],
-                         params_dict['h2'],
-                         params_dict['h3'],
-                         embed_size=params_dict['embed_size'],
-                         drop_out_rate=params_dict['dropout_rate'],
-                         use_batch_norm=params_dict['use_batchnorm'])
-        model.load_weights(os.path.join(checkpoint_dir, 'model.h5'))
-        est_c1 = load(os.path.join(checkpoint_dir, 'est_c1.joblib'))
-        est_c2 = load(os.path.join(checkpoint_dir, 'est_c2.joblib'))
-        """
         # PREDICT WITH GLOBAL MATCHING + LOCAL MODEL ON TEST SET
         curr_fold_dist = []
         curr_fold_pix = []
@@ -272,9 +264,6 @@ def train(traindirs, data_dir, upsample, params_dict, checkpointdir, logger, val
             logger.info('Getting temporal training set for {}'.format(folder))
         else:
             print('Getting temporal training set for {}'.format(folder))
-        res_x, res_y = training_generator.resolution_df.loc[
-            training_generator.resolution_df['scan']
-            == folder, ['res_x', 'res_y']].values[0]
         img_dir = os.path.join(data_dir, folder, 'Data')
         annotation_dir = os.path.join(data_dir, folder, 'Annotation')
         list_label_files = [os.path.join(annotation_dir, dI) for dI
@@ -485,9 +474,7 @@ if __name__ == '__main__':
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.666)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
     tf.keras.backend.set_session(sess)
-    train(listdir, data_dir, False, params_dict, checkpoint_dir, logger, None)
-    '''
     kf = MyKFold(data_dir, n_splits=5)
     fold_iterator = kf.getFolderIterator()
     run_global_cv(fold_iterator, data_dir, checkpoint_dir, logger, params_dict, upsample=False)
-    '''
+    train(listdir, data_dir, False, params_dict, checkpoint_dir, logger, None)
