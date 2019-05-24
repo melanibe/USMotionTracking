@@ -94,7 +94,6 @@ def create_model(img_size,
     x_init = embedLayer(x_init)
     concat_flat = keras.layers.Concatenate()([x, x_init])
     dense1 = keras.layers.Dense(d1, activation=tf.nn.elu)(concat_flat)
-    #dense2 = keras.layers.Dense(d2, activation=tf.nn.elu)(dense1)
     out_u = keras.layers.Dense(2)(dense1)
     out = keras.layers.Add()([center_coords, out_u])
     # Wrap everythin in Keras model
