@@ -20,6 +20,6 @@ In order to run any code of this repository 3 environment variables have to be s
 
 ## Saved models
 
-* The weights of the final model used for the report can found under : LINK HERE
+* The weights of the final model used for the report can found under : https://drive.google.com/drive/folders/1LyS0t0LY35EOwCA1OV6cGAPEC-MKEIJx?usp=sharing
 * This folder also contains the tracking results videos for each feature in the test set.
 
