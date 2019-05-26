@@ -438,7 +438,7 @@ def predict(testdirs, checkpoint_dir, data_dir, params_dict, upsample=False, res
             pred_df['idx'] = range(1, len(list_centers)+1)
             pred_df['c1'] = list_centers[:, 0]
             pred_df['c2'] = list_centers[:, 1]
-            pred_df.to_csv(os.path.join(checkpoint_dir, '{}.txt'.format(
+            pred_df.to_csv(os.path.join(checkpoint_dir, '{}'.format(
                 label_file)), header=False, index=False)
 
 if __name__ == '__main__':
