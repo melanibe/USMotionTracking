@@ -1,4 +1,4 @@
-# Feature Tracking in Liver: a simple yet efficient CNN-based approach (CLUST challenge).
+# A Combined Neural and Temporal Approach for Tracking Anatomical Features in Liver (CLUST challenge).
 
 ##### Mélanie Bernhardt - ETH Zurich - May 2019
 
