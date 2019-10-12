@@ -2,6 +2,10 @@
 
 ##### Mélanie Bernhardt - ETH Zurich - May 2019
 
+#### Abstract
+Ultrasound motion tracking is required for various medical applications. In this report, we describe a combined approach for tracking anatomical landmarks in liver during respiration, based on the CLUST Challenge. The proposed method combines a local Siamese-CNN and a Ridge Regression temporal model for feature localization at each frame. The method was developed and fine-tuned via 5-fold across-sequence cross-validation and then evaluated on the CLUST Challenge Test set.
+
+#### About this repository 
 This repository contains the code related to the CLUST project.
 The report describing the methods and the results can also be found under `report.pdf`.
 
