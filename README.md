@@ -1,4 +1,4 @@
-# A Combined Neural and Temporal Approach for Tracking Anatomical Features in Liver (CLUST challenge).
+# A Combined Neural and Temporal Approach for Tracking Anatomical Features in Liver.
 
 ##### Mélanie Bernhardt - ETH Zurich - May 2019
 
